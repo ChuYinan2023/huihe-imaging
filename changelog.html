@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汇禾影像管理系统 — 开发日志</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; color: #333; line-height: 1.6; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; }
+        header { background: linear-gradient(135deg, #1a73e8, #0d47a1); color: #fff; padding: 40px 0; text-align: center; }
+        header h1 { font-size: 28px; font-weight: 600; }
+        header p { margin-top: 8px; opacity: 0.9; font-size: 15px; }
+
+        /* Progress Section */
+        .progress-section { background: #fff; border-radius: 12px; padding: 28px; margin: 24px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .progress-section h2 { font-size: 20px; margin-bottom: 20px; color: #1a73e8; }
+        .progress-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 768px) { .progress-grid { grid-template-columns: 1fr; } }
+        .progress-card { border: 1px solid #e8eaed; border-radius: 8px; padding: 20px; }
+        .progress-card h3 { font-size: 16px; margin-bottom: 12px; color: #444; }
+        .progress-bar-wrap { background: #e8eaed; border-radius: 10px; height: 20px; overflow: hidden; margin-bottom: 6px; }
+        .progress-bar { height: 100%; border-radius: 10px; transition: width 0.6s ease; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 600; }
+        .progress-bar.high { background: linear-gradient(90deg, #34a853, #0f9d58); }
+        .progress-bar.mid { background: linear-gradient(90deg, #fbbc04, #f9a825); }
+        .progress-bar.low { background: linear-gradient(90deg, #ea4335, #d93025); }
+        .progress-label { font-size: 13px; color: #666; text-align: right; }
+
+        /* Feature Table */
+        .feature-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+        .feature-table th { background: #f8f9fa; text-align: left; padding: 8px 12px; font-weight: 600; border-bottom: 2px solid #e8eaed; }
+        .feature-table td { padding: 6px 12px; border-bottom: 1px solid #f0f0f0; }
+        .feature-table tr:hover { background: #f8f9fa; }
+        .status-done { color: #0f9d58; font-weight: 600; }
+        .status-partial { color: #f9a825; font-weight: 600; }
+        .status-todo { color: #999; }
+
+        /* Page List */
+        .page-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-top: 12px; }
+        .page-item { background: #f8f9fa; border-radius: 6px; padding: 10px 14px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+        .page-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .page-item .dot.done { background: #0f9d58; }
+        .page-item .dot.partial { background: #f9a825; }
+        .page-item .dot.todo { background: #ccc; }
+
+        /* Changelog */
+        .changelog { margin-top: 24px; }
+        .changelog h2 { font-size: 20px; margin-bottom: 16px; color: #1a73e8; }
+        .timeline { position: relative; padding-left: 32px; }
+        .timeline::before { content: ''; position: absolute; left: 11px; top: 0; bottom: 0; width: 2px; background: #e8eaed; }
+        .timeline-item { position: relative; margin-bottom: 24px; }
+        .timeline-dot { position: absolute; left: -32px; top: 4px; width: 22px; height: 22px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 0 2px #e8eaed; }
+        .timeline-dot.feat { background: #1a73e8; }
+        .timeline-dot.fix { background: #ea4335; }
+        .timeline-dot.docs { background: #34a853; }
+        .timeline-dot.test { background: #fbbc04; }
+        .timeline-content { background: #fff; border-radius: 8px; padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+        .timeline-time { font-size: 12px; color: #888; margin-bottom: 4px; }
+        .timeline-title { font-size: 15px; font-weight: 600; }
+        .timeline-desc { font-size: 13px; color: #666; margin-top: 6px; }
+        .timeline-hash { font-family: monospace; font-size: 11px; color: #aaa; margin-top: 4px; }
+        .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; color: #fff; margin-right: 6px; }
+        .tag.feat { background: #1a73e8; }
+        .tag.fix { background: #ea4335; }
+        .tag.docs { background: #34a853; }
+        .tag.test { background: #fbbc04; color: #333; }
+
+        footer { text-align: center; padding: 30px; color: #999; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>汇禾影像管理系统 (Huihe Imaging)</h1>
+            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Progress Overview -->
+        <div class="progress-section">
+            <h2>整体进度</h2>
+            <div class="progress-grid">
+                <div class="progress-card">
+                    <h3>功能清单完成度 (F-01 ~ F-57)</h3>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar high" style="width: 80%">80%</div>
+                    </div>
+                    <div class="progress-label">46 / 57 项已完成</div>
+                </div>
+                <div class="progress-card">
+                    <h3>页面清单完成度</h3>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar high" style="width: 93%">93%</div>
+                    </div>
+                    <div class="progress-label">13 / 14 页已完成</div>
+                </div>
+                <div class="progress-card">
+                    <h3>后端测试</h3>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar high" style="width: 100%">100%</div>
+                    </div>
+                    <div class="progress-label">79 / 79 通过</div>
+                </div>
+                <div class="progress-card">
+                    <h3>安全审查修复</h3>
+                    <div class="progress-bar-wrap">
+                        <div class="progress-bar high" style="width: 100%">100%</div>
+                    </div>
+                    <div class="progress-label">5 / 5 项已修复</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feature Checklist -->
+        <div class="progress-section">
+            <h2>功能清单 (F-01 ~ F-57)</h2>
+            <table class="feature-table">
+                <thead><tr><th>编号</th><th>模块</th><th>功能</th><th>状态</th></tr></thead>
+                <tbody>
+                    <tr><td>F-01</td><td>认证</td><td>用户名密码登录</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-02</td><td>认证</td><td>会话保持（双令牌）</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-03</td><td>认证</td><td>退出登录</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-04</td><td>用户管理</td><td>用户列表</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-05</td><td>用户管理</td><td>新增用户</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-06</td><td>用户管理</td><td>编辑用户</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-07</td><td>用户管理</td><td>停用/启用用户</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-08</td><td>用户管理</td><td>重置密码</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-09</td><td>用户管理</td><td>强制下线</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-10</td><td>项目管理</td><td>项目列表</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-11</td><td>项目管理</td><td>新增项目</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-12</td><td>项目管理</td><td>编辑项目</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-13</td><td>项目管理</td><td>中心管理</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-14</td><td>项目管理</td><td>受试者管理</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-15</td><td>项目管理</td><td>项目成员</td><td class="status-partial">部分完成</td></tr>
+                    <tr><td>F-16</td><td>影像上传</td><td>创建影像会话</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-17</td><td>影像上传</td><td>文件上传（DICOM/JPEG/PNG）</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-18</td><td>影像上传</td><td>大文件分片断点续传</td><td class="status-todo">待开发</td></tr>
+                    <tr><td>F-19</td><td>影像上传</td><td>上传进度展示</td><td class="status-partial">部分完成</td></tr>
+                    <tr><td>F-20</td><td>影像上传</td><td>SHA256 完整性校验</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-21</td><td>自动脱敏</td><td>DICOM 自动脱敏</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-22</td><td>自动脱敏</td><td>私有标签移除</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-23</td><td>自动脱敏</td><td>UID 重写</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-24</td><td>自动脱敏</td><td>脱敏日志</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-25</td><td>自动脱敏</td><td>JPEG/PNG 直通</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-26</td><td>影像中心</td><td>影像列表</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-27</td><td>影像中心</td><td>多维筛选</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-28</td><td>影像中心</td><td>受试者视图</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-29</td><td>影像中心</td><td>影像详情</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-30</td><td>影像中心</td><td>影像文件预览</td><td class="status-todo">待开发</td></tr>
+                    <tr><td>F-31</td><td>影像质控</td><td>审阅影像</td><td class="status-todo">待开发</td></tr>
+                    <tr><td>F-32</td><td>影像质控</td><td>标记状态</td><td class="status-todo">待开发</td></tr>
+                    <tr><td>F-33</td><td>问题追踪</td><td>创建问题</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-34</td><td>问题追踪</td><td>问题列表</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-35</td><td>问题追踪</td><td>问题详情</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-36</td><td>问题追踪</td><td>处理问题</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-37</td><td>问题追踪</td><td>复核问题</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-38</td><td>问题追踪</td><td>操作日志</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-39</td><td>通知</td><td>问题创建通知</td><td class="status-partial">桩（待对接 SMS）</td></tr>
+                    <tr><td>F-40</td><td>通知</td><td>问题打回通知</td><td class="status-partial">桩（待对接 SMS）</td></tr>
+                    <tr><td>F-41</td><td>报告管理</td><td>上传报告</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-42</td><td>报告管理</td><td>报告列表</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-43</td><td>报告管理</td><td>报告详情</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-44</td><td>报告管理</td><td>AI 辅助摘要</td><td class="status-partial">桩（待对接 AI）</td></tr>
+                    <tr><td>F-45</td><td>报告管理</td><td>电子签名</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-46</td><td>报告管理</td><td>报告下载</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-47</td><td>工作台</td><td>统计概览</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-48</td><td>工作台</td><td>待办事项</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-49</td><td>工作台</td><td>事件提醒</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-50</td><td>审计日志</td><td>日志列表</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-51</td><td>审计日志</td><td>日志详情（脱敏展示）</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-52</td><td>审计日志</td><td>不可篡改</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-53</td><td>个人设置</td><td>修改密码</td><td class="status-done">已完成</td></tr>
+                    <tr><td>F-54</td><td>个人设置</td><td>上传签名</td><td class="status-partial">前端 UI 有，后端 API 待开发</td></tr>
+                    <tr><td>F-55</td><td>数据导出</td><td>影像数据导出</td><td class="status-todo">待开发</td></tr>
+                    <tr><td>F-56</td><td>数据导出</td><td>问题数据导出</td><td class="status-todo">待开发</td></tr>
+                    <tr><td>F-57</td><td>数据导出</td><td>报告数据导出</td><td class="status-todo">待开发</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Page List -->
+        <div class="progress-section">
+            <h2>页面清单</h2>
+            <div class="page-grid">
+                <div class="page-item"><span>登录页</span><span class="dot done"></span></div>
+                <div class="page-item"><span>工作台 / 仪表盘</span><span class="dot done"></span></div>
+                <div class="page-item"><span>影像列表</span><span class="dot done"></span></div>
+                <div class="page-item"><span>影像详情</span><span class="dot partial"></span></div>
+                <div class="page-item"><span>影像上传</span><span class="dot done"></span></div>
+                <div class="page-item"><span>问题列表</span><span class="dot done"></span></div>
+                <div class="page-item"><span>问题详情</span><span class="dot done"></span></div>
+                <div class="page-item"><span>报告列表</span><span class="dot done"></span></div>
+                <div class="page-item"><span>项目列表</span><span class="dot done"></span></div>
+                <div class="page-item"><span>项目详情（中心/受试者）</span><span class="dot done"></span></div>
+                <div class="page-item"><span>用户管理</span><span class="dot done"></span></div>
+                <div class="page-item"><span>审计日志</span><span class="dot done"></span></div>
+                <div class="page-item"><span>个人设置</span><span class="dot done"></span></div>
+                <div class="page-item"><span>报告详情（预览/签名）</span><span class="dot done"></span></div>
+            </div>
+        </div>
+
+        <!-- Changelog Timeline -->
+        <div class="progress-section changelog">
+            <h2>更新日志</h2>
+            <div class="timeline">
+
+                <div class="timeline-item">
+                    <div class="timeline-dot fix"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 09:16 (PST)</div>
+                        <div class="timeline-title"><span class="tag fix">fix</span>修复 5 个关键安全问题</div>
+                        <div class="timeline-desc">
+                            1. CSRF 后端校验：双提交 Token 模式，header + cookie 匹配验证<br>
+                            2. Cookie secure 标志：新增 COOKIE_SECURE 环境变量配置<br>
+                            3. 文件上传流式处理：8KB chunk 流式写入，防止大文件 OOM<br>
+                            4. 报告路径遍历防护：_safe_storage_path() 验证所有 DB 路径<br>
+                            5. 审计日志接入：所有写操作端点接入 AuditService
+                        </div>
+                        <div class="timeline-hash">6a0c700</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot docs"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 08:34 (PST)</div>
+                        <div class="timeline-title"><span class="tag docs">docs</span>PMS 规格对比分析</div>
+                        <div class="timeline-desc">将 PMS 项目规划书 + 技术方案与当前实现进行逐项对比，识别 5 个重要差距、7 个中等差距、7 个低优先级差距，匹配度约 80%。</div>
+                        <div class="timeline-hash">2a44445</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot test"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 07:53 (PST)</div>
+                        <div class="timeline-title"><span class="tag test">test</span>E2E 端到端冒烟测试</div>
+                        <div class="timeline-desc">覆盖完整业务流程：登录 → 影像会话创建 → 问题创建 → CRC 处理 → 专家复核 → 关闭 → 审计日志验证。</div>
+                        <div class="timeline-hash">66af49b</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot feat"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 07:42 ~ 07:53 (PST)</div>
+                        <div class="timeline-title"><span class="tag feat">feat</span>Phase 7: 集成与种子数据</div>
+                        <div class="timeline-desc">
+                            前后端 dev proxy 与启动脚本；种子数据（6 用户 × 1 项目 × 3 中心 × 9 受试者）。
+                        </div>
+                        <div class="timeline-hash">705523a ~ 86b8b63</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot feat"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 07:29 ~ 07:39 (PST)</div>
+                        <div class="timeline-title"><span class="tag feat">feat</span>Phase 6: 前端全部功能页面</div>
+                        <div class="timeline-desc">
+                            登录页、仪表盘、用户管理（CRUD 弹窗）、项目管理（可展开中心列表）、影像上传（4 步向导）、影像列表（筛选+受试者视图）、问题列表+详情（时间线/处理/审核）、报告管理（上传/签章/AI 摘要）、审计日志、个人设置。
+                        </div>
+                        <div class="timeline-hash">dd83188 ~ e487c93</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot feat"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 06:34 ~ 07:23 (PST)</div>
+                        <div class="timeline-title"><span class="tag feat">feat</span>Phase 4: 全部后端 API 端点</div>
+                        <div class="timeline-desc">
+                            用户 CRUD、项目/中心/受试者管理、影像上传（文件校验+哈希验证）、DICOM 脱敏 Celery 任务（幂等）、问题追踪（FSM 状态流转）、报告管理（PDF 签章）、审计日志查询、短信通知任务桩。
+                        </div>
+                        <div class="timeline-hash">90f49e0 ~ a2765f6</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot feat"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 06:02 ~ 06:04 (PST)</div>
+                        <div class="timeline-title"><span class="tag feat">feat</span>Phase 3: 核心服务层</div>
+                        <div class="timeline-desc">
+                            StorageService 抽象（LocalStorage + 路径遍历防护）、FSM 状态机（影像+问题）、AuditService（手机/身份证脱敏）、DICOM 脱敏器（19 个 PHI 标签、私有标签移除、2.25.UID 重写）。
+                        </div>
+                        <div class="timeline-hash">b661e9d ~ 5e0a496</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot feat"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 05:47 ~ 05:58 (PST)</div>
+                        <div class="timeline-title"><span class="tag feat">feat</span>Phase 2: 认证与安全</div>
+                        <div class="timeline-desc">
+                            密码哈希（bcrypt）、JWT 令牌创建/解码（完整 claims 校验）、登录/刷新/登出 API、Refresh Token 族链轮换与重放检测、RBAC 权限矩阵（6 角色 × 12 权限）。
+                        </div>
+                        <div class="timeline-hash">37cb764 ~ c26901f</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot feat"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 05:11 ~ 05:35 (PST)</div>
+                        <div class="timeline-title"><span class="tag feat">feat</span>Phase 1: 后端脚手架 + 数据库模型</div>
+                        <div class="timeline-desc">
+                            FastAPI 项目结构、Pydantic 配置、异步 SQLAlchemy 数据库连接、12 张表数据模型（User/RefreshToken/Project/Center/Subject/ImagingSession/ImagingFile/AnonymizationLog/Issue/IssueLog/Report/AuditLog）、Alembic 初始迁移。
+                        </div>
+                        <div class="timeline-hash">295c311 ~ 25457bd</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot docs"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-27 21:17 ~ 21:22 (PST)</div>
+                        <div class="timeline-title"><span class="tag docs">docs</span>系统设计与实施计划</div>
+                        <div class="timeline-desc">
+                            完成系统设计文档（3 轮安全加固审查、20 项改进），编写 34 个任务 × 7 阶段的 TDD 实施计划。
+                        </div>
+                        <div class="timeline-hash">da17f7d ~ 77a7695</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-dot docs"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-27 20:54 (PST)</div>
+                        <div class="timeline-title"><span class="tag docs">docs</span>项目初始化</div>
+                        <div class="timeline-desc">从 Specify 模板创建项目仓库。</div>
+                        <div class="timeline-hash">02a98c0</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>汇禾影像管理系统 &copy; 2026 | 最后更新：2026-02-28</p>
+    </footer>
+</body>
+</html>
