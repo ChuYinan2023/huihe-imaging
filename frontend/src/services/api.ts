@@ -36,8 +36,10 @@ api.interceptors.response.use(
       try {
         const res = await axios.post('/api/auth/refresh', {}, { withCredentials: true });
         accessToken = res.data.access_token;
+        csrfToken = res.data.csrf_token;
         error.config.headers.Authorization = `Bearer ${accessToken}`;
-        return axios(error.config);
+        error.config.headers['X-CSRF-Token'] = csrfToken;
+        return api(error.config);
       } catch {
         clearTokens();
         window.location.href = '/login';

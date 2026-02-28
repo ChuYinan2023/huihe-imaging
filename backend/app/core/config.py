@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     DICOM_UID_PREFIX: str = "2.25."
     DICOM_ANONYMIZATION_SALT: str = "change-me-in-production"
     CSRF_SECRET_KEY: str = "change-me-csrf-secret"
+    COOKIE_SECURE: bool = False
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

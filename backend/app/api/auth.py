@@ -13,7 +13,8 @@ from app.core.security import (
 )
 from app.models.user import User
 from app.models.refresh_token import RefreshToken
-from app.api.deps import get_current_user
+from app.api.deps import get_current_user, get_audit_service, get_client_ip, get_user_agent
+from app.services.audit_service import AuditService
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -23,9 +24,22 @@ class LoginRequest(BaseModel):
     password: str
 
 
+def _set_csrf_cookie(response: Response, csrf_token: str) -> None:
+    response.set_cookie(
+        key="csrf_token",
+        value=csrf_token,
+        httponly=False,
+        secure=settings.COOKIE_SECURE,
+        samesite="strict",
+        max_age=7 * 24 * 3600,
+        path="/",
+    )
+
+
 @router.post("/login")
 async def login(
     body: LoginRequest,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
@@ -50,17 +64,30 @@ async def login(
         expires_at=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
     db.add(rt)
+
+    # Audit log
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="login",
+        resource_type="user",
+        resource_id=str(user.id),
+    )
+
     await db.commit()
 
     response.set_cookie(
         key="refresh_token",
         value=refresh_token_str,
         httponly=True,
-        secure=False,
+        secure=settings.COOKIE_SECURE,
         samesite="strict",
         max_age=7 * 24 * 3600,
         path="/api/auth",
     )
+    _set_csrf_cookie(response, csrf_token)
 
     return {
         "access_token": access_token,
@@ -121,6 +148,7 @@ async def refresh_token(
     new_refresh, new_jti, same_family = create_refresh_token(
         user.id, user.token_version, family_id=family_id
     )
+    new_csrf = secrets.token_urlsafe(32)
 
     new_rt = RefreshToken(
         user_id=user.id,
@@ -136,18 +164,43 @@ async def refresh_token(
         key="refresh_token",
         value=new_refresh,
         httponly=True,
-        secure=False,
+        secure=settings.COOKIE_SECURE,
         samesite="strict",
         max_age=7 * 24 * 3600,
         path="/api/auth",
     )
+    _set_csrf_cookie(response, new_csrf)
 
-    return {"access_token": new_access}
+    return {"access_token": new_access, "csrf_token": new_csrf}
 
 
 @router.post("/logout")
-async def logout(response: Response):
+async def logout(
+    request: Request,
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+):
+    # Try to audit the logout if we can identify the user
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if token:
+        try:
+            payload = decode_token(token, audience="access")
+            user_id = int(payload["sub"])
+            audit = AuditService(db)
+            await audit.log(
+                operator_id=user_id,
+                ip=get_client_ip(request),
+                user_agent=get_user_agent(request),
+                action="logout",
+                resource_type="user",
+                resource_id=str(user_id),
+            )
+            await db.commit()
+        except Exception:
+            pass
+
     response.delete_cookie("refresh_token", path="/api/auth")
+    response.delete_cookie("csrf_token", path="/")
     return {"message": "Logged out"}
 
 

@@ -1,7 +1,7 @@
 import hashlib
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
+from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -12,9 +12,18 @@ from app.core.permissions import check_permission, Permission
 from app.models.user import User
 from app.models.imaging import ImagingSession
 from app.models.report import Report
-from app.api.deps import get_current_user
+from app.services.audit_service import AuditService
+from app.api.deps import get_current_user, get_client_ip, get_user_agent
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
+
+
+def _safe_storage_path(rel_path: str) -> Path:
+    full = (settings.STORAGE_ROOT / rel_path).resolve()
+    root = settings.STORAGE_ROOT.resolve()
+    if not str(full).startswith(str(root)):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
+    return full
 
 
 def _report_response(report: Report) -> dict:
@@ -35,6 +44,7 @@ def _report_response(report: Report) -> dict:
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
 async def upload_report(
+    request: Request,
     session_id: int = Form(...),
     issue_id: int | None = Form(None),
     file: UploadFile = File(...),
@@ -80,6 +90,18 @@ async def upload_report(
         uploaded_by=current_user.id,
     )
     db.add(report)
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="upload_report",
+        resource_type="report",
+        resource_id=str(session_id),
+        after_value={"filename": file.filename},
+    )
+
     await db.commit()
     await db.refresh(report)
 
@@ -145,6 +167,7 @@ async def get_report(
 @router.post("/{report_id}/sign")
 async def sign_report(
     report_id: int,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -162,14 +185,14 @@ async def sign_report(
             detail="User has no signature uploaded",
         )
 
-    pdf_path = settings.STORAGE_ROOT / report.file_path
+    pdf_path = _safe_storage_path(report.file_path)
     if not pdf_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Report PDF file not found on disk",
         )
 
-    signature_path = Path(current_user.signature_path)
+    signature_path = _safe_storage_path(current_user.signature_path)
     if not signature_path.exists():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -185,6 +208,17 @@ async def sign_report(
 
     relative_signed = f"{settings.STORAGE_REPORTS_DIR}/signed/{signed_name}"
     report.signed_file_path = relative_signed
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="sign_report",
+        resource_type="report",
+        resource_id=str(report_id),
+    )
+
     await db.commit()
     await db.refresh(report)
 
@@ -205,9 +239,9 @@ async def download_report(
     if not report:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
 
-    # Use signed version if available
+    # Use signed version if available — with path traversal protection
     file_rel_path = report.signed_file_path or report.file_path
-    file_path = settings.STORAGE_ROOT / file_rel_path
+    file_path = _safe_storage_path(file_rel_path)
 
     if not file_path.exists():
         raise HTTPException(

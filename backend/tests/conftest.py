@@ -1,3 +1,4 @@
+import warnings
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
@@ -8,6 +9,24 @@ from app.main import app
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
 engine = create_async_engine(TEST_DATABASE_URL, echo=False)
 TestSession = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+TEST_CSRF_TOKEN = "test-csrf-token-for-testing"
+
+
+class CSRFClient(AsyncClient):
+    """AsyncClient that always includes matching CSRF header+cookie."""
+
+    async def request(self, method, url, **kwargs):
+        headers = kwargs.pop("headers", {}) or {}
+        headers.setdefault("X-CSRF-Token", TEST_CSRF_TOKEN)
+        kwargs["headers"] = headers
+        # Force CSRF cookie on every request to prevent login response from overwriting
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            cookies = kwargs.pop("cookies", {}) or {}
+            cookies["csrf_token"] = TEST_CSRF_TOKEN
+            kwargs["cookies"] = cookies
+        return await super().request(method, url, **kwargs)
 
 
 @pytest_asyncio.fixture
@@ -27,6 +46,6 @@ async def client(db_session):
 
     app.dependency_overrides[get_db] = override_get_db
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as ac:
+    async with CSRFClient(transport=transport, base_url="http://test") as ac:
         yield ac
     app.dependency_overrides.clear()

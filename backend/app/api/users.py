@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +7,8 @@ from app.core.database import get_db
 from app.core.security import hash_password, verify_password
 from app.core.permissions import check_permission, Permission
 from app.models.user import User, UserRole
-from app.api.deps import get_current_user
+from app.services.audit_service import AuditService
+from app.api.deps import get_current_user, get_client_ip, get_user_agent
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -52,6 +53,7 @@ def _user_response(user: User) -> dict:
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_user(
     body: CreateUserRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -74,6 +76,19 @@ async def create_user(
         phone=body.phone,
     )
     db.add(user)
+    await db.flush()
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="create_user",
+        resource_type="user",
+        resource_id=str(user.id),
+        after_value={"username": body.username, "role": body.role.value, "phone": body.phone},
+    )
+
     await db.commit()
     await db.refresh(user)
     return _user_response(user)
@@ -110,6 +125,7 @@ async def list_users(
 @router.put("/me/password")
 async def change_own_password(
     body: ChangePasswordRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -118,6 +134,17 @@ async def change_own_password(
 
     current_user.hashed_password = hash_password(body.new_password)
     current_user.token_version += 1
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="change_password",
+        resource_type="user",
+        resource_id=str(current_user.id),
+    )
+
     await db.commit()
     return {"message": "Password changed successfully"}
 
@@ -126,6 +153,7 @@ async def change_own_password(
 async def update_user(
     user_id: int,
     body: UpdateUserRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -138,8 +166,21 @@ async def update_user(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     update_data = body.model_dump(exclude_unset=True)
+    before = {k: getattr(user, k) for k in update_data}
     for field, value in update_data.items():
         setattr(user, field, value)
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="update_user",
+        resource_type="user",
+        resource_id=str(user_id),
+        before_value={k: str(v) if v is not None else None for k, v in before.items()},
+        after_value={k: str(v) if v is not None else None for k, v in update_data.items()},
+    )
 
     await db.commit()
     await db.refresh(user)
@@ -149,6 +190,7 @@ async def update_user(
 @router.put("/{user_id}/reset-password")
 async def reset_password(
     user_id: int,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -162,5 +204,16 @@ async def reset_password(
 
     user.hashed_password = hash_password(DEFAULT_PASSWORD)
     user.token_version += 1
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="reset_password",
+        resource_type="user",
+        resource_id=str(user_id),
+    )
+
     await db.commit()
     return {"message": "Password reset to default"}

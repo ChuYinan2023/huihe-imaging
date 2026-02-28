@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,7 +9,8 @@ from app.models.user import User
 from app.models.imaging import ImagingSession
 from app.models.issue import Issue, IssueStatus, IssueLog
 from app.services.state_machine import IssueFSM, InvalidTransitionError
-from app.api.deps import get_current_user
+from app.services.audit_service import AuditService
+from app.api.deps import get_current_user, get_client_ip, get_user_agent
 
 router = APIRouter(prefix="/api/issues", tags=["issues"])
 
@@ -61,6 +62,7 @@ def _issue_log_response(log: IssueLog) -> dict:
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_issue(
     body: CreateIssueRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -86,8 +88,7 @@ async def create_issue(
         created_by=current_user.id,
     )
     db.add(issue)
-    await db.commit()
-    await db.refresh(issue)
+    await db.flush()
 
     # Create initial log entry
     log = IssueLog(
@@ -99,7 +100,20 @@ async def create_issue(
         to_status=IssueStatus.PENDING.value,
     )
     db.add(log)
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="create_issue",
+        resource_type="issue",
+        resource_id=str(issue.id),
+        after_value={"session_id": body.session_id, "description": body.description},
+    )
+
     await db.commit()
+    await db.refresh(issue)
 
     return _issue_response(issue)
 
@@ -183,6 +197,7 @@ async def get_issue(
 async def process_issue(
     issue_id: int,
     body: ProcessIssueRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -251,6 +266,19 @@ async def process_issue(
         )
 
     issue.assigned_to = current_user.id
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="process_issue",
+        resource_type="issue",
+        resource_id=str(issue_id),
+        before_value={"status": old_status.value},
+        after_value={"status": issue.status.value},
+    )
+
     await db.commit()
     await db.refresh(issue)
     return _issue_response(issue)
@@ -260,6 +288,7 @@ async def process_issue(
 async def review_issue(
     issue_id: int,
     body: ReviewIssueRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -301,6 +330,18 @@ async def review_issue(
         to_status=new_status.value,
     )
     db.add(log)
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action=f"review_issue_{body.action}",
+        resource_type="issue",
+        resource_id=str(issue_id),
+        before_value={"status": old_status.value},
+        after_value={"status": new_status.value},
+    )
 
     await db.commit()
     await db.refresh(issue)

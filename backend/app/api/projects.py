@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +7,8 @@ from app.core.database import get_db
 from app.core.permissions import check_permission, Permission
 from app.models.user import User, UserRole
 from app.models.project import Project, Center, Subject
-from app.api.deps import get_current_user
+from app.services.audit_service import AuditService
+from app.api.deps import get_current_user, get_client_ip, get_user_agent
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -76,6 +77,7 @@ def _can_manage_subjects(role: UserRole) -> bool:
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_project(
     body: CreateProjectRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -92,6 +94,19 @@ async def create_project(
         description=body.description,
     )
     db.add(project)
+    await db.flush()
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="create_project",
+        resource_type="project",
+        resource_id=str(project.id),
+        after_value={"code": body.code, "name": body.name},
+    )
+
     await db.commit()
     await db.refresh(project)
     return _project_response(project)
@@ -125,6 +140,7 @@ async def list_projects(
 async def update_project(
     project_id: int,
     body: UpdateProjectRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -137,8 +153,21 @@ async def update_project(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
 
     update_data = body.model_dump(exclude_unset=True)
+    before = {k: getattr(project, k) for k in update_data}
     for field, value in update_data.items():
         setattr(project, field, value)
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="update_project",
+        resource_type="project",
+        resource_id=str(project_id),
+        before_value={k: str(v) if v is not None else None for k, v in before.items()},
+        after_value={k: str(v) if v is not None else None for k, v in update_data.items()},
+    )
 
     await db.commit()
     await db.refresh(project)
@@ -149,6 +178,7 @@ async def update_project(
 async def add_center(
     project_id: int,
     body: CreateCenterRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -171,6 +201,19 @@ async def add_center(
         name=body.name,
     )
     db.add(center)
+    await db.flush()
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="create_center",
+        resource_type="center",
+        resource_id=str(center.id),
+        after_value={"project_id": project_id, "code": body.code, "name": body.name},
+    )
+
     await db.commit()
     await db.refresh(center)
     return _center_response(center)
@@ -198,6 +241,7 @@ async def add_subject(
     project_id: int,
     center_id: int,
     body: CreateSubjectRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -226,6 +270,19 @@ async def add_subject(
         screening_number=body.screening_number,
     )
     db.add(subject)
+    await db.flush()
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="create_subject",
+        resource_type="subject",
+        resource_id=str(subject.id),
+        after_value={"project_id": project_id, "center_id": center_id, "screening_number": body.screening_number},
+    )
+
     await db.commit()
     await db.refresh(subject)
     return _subject_response(subject)
