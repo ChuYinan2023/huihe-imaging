@@ -7,6 +7,7 @@ from app.api.projects import router as projects_router
 from app.api.imaging import router as imaging_router
 from app.api.issues import router as issues_router
 from app.api.reports import router as reports_router
+from app.api.audit import router as audit_router
 
 app = FastAPI(title=settings.APP_NAME)
 
@@ -24,6 +25,7 @@ app.include_router(projects_router)
 app.include_router(imaging_router)
 app.include_router(issues_router)
 app.include_router(reports_router)
+app.include_router(audit_router)
 
 
 @app.get("/api/health")
