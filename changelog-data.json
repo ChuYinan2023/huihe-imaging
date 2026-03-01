@@ -84,6 +84,13 @@
   },
   "entries": [
     {
+      "date": "2026-02-28 17:32 (PST)",
+      "tag": "fix",
+      "title": "修复 Review 测试 5 项质量问题",
+      "desc": "基于代码审查反馈修复测试质量问题：\n1. 测试函数计数修正 27→28，changelog 描述同步更新\n2. test_issue5（报告上传无大小限制）：原 2MB 文件测试在 MAX_FILE_SIZE_MB=500 下是永久 xfail，改为源码检查验证是否有流式读取和大小限制\n3. test_issue8（审计字段名）：字段集合比较从 == 改为 issubset，避免未来新增字段导致测试破坏\n4. test_issue13（validate_file 死代码）：新增 test_issue13_dead_code_branch_unreachable 证明 octet-stream 已在 ALLOWED_MIMES 中，line 21 分支不可达\n5. test_issue16（UID 格式）：新增 DICOM UID 格式断言（最长 64 字符、仅数字和点号）\n6. test_issue17（签名 A4 硬编码）：docstring 注明源码检查的脆弱性和重构建议\n7. test_issue2（Settings 副本）：注释说明有意复制和同步维护要求\n\n全部测试通过：96 passed + 11 xfail，零回归。",
+      "commits": "6bc593e"
+    },
+    {
       "date": "2026-02-28 18:30 (PST)",
       "tag": "test",
       "title": "全模块代码审查 + 18 项 Review 验证测试",

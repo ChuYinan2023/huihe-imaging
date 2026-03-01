@@ -72,7 +72,7 @@
     <header>
         <div class="container">
             <h1>汇禾影像管理系统 (Huihe Imaging)</h1>
-            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 17:32</p>
+            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 17:34</p>
         </div>
     </header>
 
@@ -200,6 +200,16 @@
         <div class="progress-section changelog">
             <h2>更新日志</h2>
             <div class="timeline">
+
+                <div class="timeline-item">
+                    <div class="timeline-dot fix"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 17:32 (PST)</div>
+                        <div class="timeline-title"><span class="tag fix" style="color:#fff">fix</span>修复 Review 测试 5 项质量问题</div>
+                        <div class="timeline-desc">基于代码审查反馈修复测试质量问题：<br>1. 测试函数计数修正 27→28，changelog 描述同步更新<br>2. test_issue5（报告上传无大小限制）：原 2MB 文件测试在 MAX_FILE_SIZE_MB=500 下是永久 xfail，改为源码检查验证是否有流式读取和大小限制<br>3. test_issue8（审计字段名）：字段集合比较从 == 改为 issubset，避免未来新增字段导致测试破坏<br>4. test_issue13（validate_file 死代码）：新增 test_issue13_dead_code_branch_unreachable 证明 octet-stream 已在 ALLOWED_MIMES 中，line 21 分支不可达<br>5. test_issue16（UID 格式）：新增 DICOM UID 格式断言（最长 64 字符、仅数字和点号）<br>6. test_issue17（签名 A4 硬编码）：docstring 注明源码检查的脆弱性和重构建议<br>7. test_issue2（Settings 副本）：注释说明有意复制和同步维护要求<br><br>全部测试通过：96 passed + 11 xfail，零回归。</div>
+                        <div class="timeline-hash">6bc593e</div>
+                    </div>
+                </div>
 
                 <div class="timeline-item">
                     <div class="timeline-dot test"></div>
