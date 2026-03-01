@@ -18,13 +18,11 @@ class Permission(str, enum.Enum):
 
 
 ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
-    UserRole.ADMIN: {
-        Permission.MANAGE_USERS, Permission.MANAGE_PROJECTS,
-        Permission.DOWNLOAD_DATA, Permission.VIEW_AUDIT_LOG,
-        Permission.VIEW_REPORTS, Permission.VIEW_IMAGING, Permission.VIEW_ISSUES,
-    },
+    UserRole.ADMIN: set(Permission),  # Admin has all permissions
     UserRole.PM: {
         Permission.MANAGE_PROJECTS, Permission.DOWNLOAD_DATA,
+        Permission.CREATE_ISSUE, Permission.REVIEW_ISSUE,
+        Permission.UPLOAD_REPORT,
         Permission.VIEW_REPORTS, Permission.VIEW_IMAGING, Permission.VIEW_ISSUES,
     },
     UserRole.EXPERT: {
@@ -33,10 +31,11 @@ ROLE_PERMISSIONS: dict[UserRole, set[Permission]] = {
         Permission.VIEW_IMAGING, Permission.VIEW_ISSUES,
     },
     UserRole.CRC: {
-        Permission.UPLOAD_IMAGING, Permission.PROCESS_ISSUE,
+        Permission.UPLOAD_IMAGING, Permission.CREATE_ISSUE, Permission.PROCESS_ISSUE,
         Permission.VIEW_REPORTS, Permission.VIEW_IMAGING, Permission.VIEW_ISSUES,
     },
     UserRole.CRA: {
+        Permission.CREATE_ISSUE, Permission.UPLOAD_REPORT,
         Permission.VIEW_REPORTS, Permission.VIEW_IMAGING, Permission.VIEW_ISSUES,
     },
     UserRole.DM: {

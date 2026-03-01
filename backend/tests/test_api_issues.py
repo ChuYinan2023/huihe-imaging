@@ -35,6 +35,20 @@ async def crc_user(db_session):
 
 
 @pytest_asyncio.fixture
+async def dm_user(db_session):
+    user = User(
+        username="dmissue",
+        email="dmissue@example.com",
+        hashed_password=hash_password("DmPass123!"),
+        full_name="DM Issue User",
+        role=UserRole.DM,
+    )
+    db_session.add(user)
+    await db_session.commit()
+    return user
+
+
+@pytest_asyncio.fixture
 async def issue_test_data(db_session, crc_user):
     project = Project(code="ISS001", name="Issue Test Project")
     db_session.add(project)
@@ -99,9 +113,9 @@ async def test_expert_can_create_issue(client, expert_user, crc_user, issue_test
 
 
 @pytest.mark.asyncio
-async def test_crc_cannot_create_issue(client, crc_user, issue_test_data):
+async def test_dm_cannot_create_issue(client, dm_user, issue_test_data):
     project, center, subject, session = issue_test_data
-    token = await _get_token(client, "crcissue", "CrcPass123!")
+    token = await _get_token(client, "dmissue", "DmPass123!")
     response = await client.post(
         "/api/issues",
         json={
