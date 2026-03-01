@@ -72,7 +72,7 @@
     <header>
         <div class="container">
             <h1>汇禾影像管理系统 (Huihe Imaging)</h1>
-            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 16:49</p>
+            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 17:13</p>
         </div>
     </header>
 
@@ -99,7 +99,7 @@
                     <div class="progress-bar-wrap">
                         <div class="progress-bar high" style="width: 100%">100%</div>
                     </div>
-                    <div class="progress-label">80 / 80 通过</div>
+                    <div class="progress-label">95 / 95 通过</div>
                 </div>
                 <div class="progress-card">
                     <h3>安全审查修复</h3>
@@ -200,6 +200,16 @@
         <div class="progress-section changelog">
             <h2>更新日志</h2>
             <div class="timeline">
+
+                <div class="timeline-item">
+                    <div class="timeline-dot test"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 18:30 (PST)</div>
+                        <div class="timeline-title"><span class="tag test" style="color:#333">test</span>全模块代码审查 + 18 项 Review 验证测试</div>
+                        <div class="timeline-desc">完成全栈代码审查，识别 36 个问题（6 高 / 8 中 / 22 低），覆盖认证、配置、用户、影像、审计、报告、前端 7 个模块。审查报告保存至 docs/reviews/2026-02-28-full-code-review.md。<br><br>基于审查结果创建 6 个测试文件共 27 个测试函数，验证 18 个后端可测问题：<br>• test_review_auth.py — Issue #1 退出不废弃 refresh token、#15 过期 token 堆积（3 测试，2 xfail）<br>• test_review_config.py — Issue #2 弱密钥无启动校验（2 测试，1 xfail）<br>• test_review_users.py — Issue #3 硬编码默认密码、#9 email 唯一性缺失（4 测试，2 xfail）<br>• test_review_imaging.py — Issue #4 匿名化 Celery 未触发、#10 session 所有权、#12 路径泄露（3 测试，3 xfail）<br>• test_review_audit.py — Issue #7 日期过滤字符串比较、#8 字段名不匹配、#14 IP 伪造（5 测试，1 xfail）<br>• test_review_reports.py — Issue #5 上传无大小限制、#6 项目未按角色过滤、#11 PROCESSING 状态跳过、#13 validate_file 冗余、#16 UID 确定性、#17 签名硬编码 A4、#18 签名权限复用（10 测试，2 xfail）<br><br>全部测试通过：95 passed + 11 xfail，零回归。</div>
+                        <div class="timeline-hash"></div>
+                    </div>
+                </div>
 
                 <div class="timeline-item">
                     <div class="timeline-dot fix"></div>

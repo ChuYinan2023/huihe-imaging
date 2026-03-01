@@ -75,12 +75,21 @@
     {"name": "报告详情（预览/签名）", "status": "done"}
   ],
   "stats": {
-    "tests_passed": 80,
-    "tests_total": 80,
+    "tests_passed": 95,
+    "tests_total": 95,
     "security_fixed": 5,
-    "security_total": 5
+    "security_total": 5,
+    "review_issues_total": 36,
+    "review_issues_tested": 18
   },
   "entries": [
+    {
+      "date": "2026-02-28 18:30 (PST)",
+      "tag": "test",
+      "title": "全模块代码审查 + 18 项 Review 验证测试",
+      "desc": "完成全栈代码审查，识别 36 个问题（6 高 / 8 中 / 22 低），覆盖认证、配置、用户、影像、审计、报告、前端 7 个模块。审查报告保存至 docs/reviews/2026-02-28-full-code-review.md。\n\n基于审查结果创建 6 个测试文件共 27 个测试函数，验证 18 个后端可测问题：\n• test_review_auth.py — Issue #1 退出不废弃 refresh token、#15 过期 token 堆积（3 测试，2 xfail）\n• test_review_config.py — Issue #2 弱密钥无启动校验（2 测试，1 xfail）\n• test_review_users.py — Issue #3 硬编码默认密码、#9 email 唯一性缺失（4 测试，2 xfail）\n• test_review_imaging.py — Issue #4 匿名化 Celery 未触发、#10 session 所有权、#12 路径泄露（3 测试，3 xfail）\n• test_review_audit.py — Issue #7 日期过滤字符串比较、#8 字段名不匹配、#14 IP 伪造（5 测试，1 xfail）\n• test_review_reports.py — Issue #5 上传无大小限制、#6 项目未按角色过滤、#11 PROCESSING 状态跳过、#13 validate_file 冗余、#16 UID 确定性、#17 签名硬编码 A4、#18 签名权限复用（10 测试，2 xfail）\n\n全部测试通过：95 passed + 11 xfail，零回归。",
+      "commits": ""
+    },
     {
       "date": "2026-02-28 16:39 (PST)",
       "tag": "fix",
