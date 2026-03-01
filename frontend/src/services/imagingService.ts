@@ -22,4 +22,8 @@ export const imagingService = {
     api.get('/imaging/by-subject', { params }),
   getDetail: (id: number) =>
     api.get(`/imaging/${id}`),
+  getThumbnail: (fileId: number) =>
+    api.get(`/imaging/files/${fileId}/thumbnail`, { responseType: 'blob' }),
+  downloadFile: (fileId: number) =>
+    api.get(`/imaging/files/${fileId}/download`, { responseType: 'blob' }),
 };

@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, status
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -410,3 +411,103 @@ async def get_session(
     resp["center_name"] = center_name
     resp["files"] = [_file_response(f) for f in files]
     return resp
+
+
+def _safe_file_path(rel_path: str) -> Path:
+    """Resolve file path with traversal protection."""
+    full = (settings.STORAGE_ROOT / rel_path).resolve()
+    root = settings.STORAGE_ROOT.resolve()
+    if not str(full).startswith(str(root)):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path")
+    return full
+
+
+@router.get("/files/{file_id}/download")
+async def download_file(
+    file_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Download an imaging file (original or anonymized)."""
+    if not check_permission(current_user.role, Permission.VIEW_IMAGING):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
+
+    result = await db.execute(select(ImagingFile).where(ImagingFile.id == file_id))
+    img_file = result.scalar_one_or_none()
+    if not img_file:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+
+    # Prefer anonymized version if available
+    rel_path = img_file.anonymized_path or img_file.file_path
+    file_path = _safe_file_path(rel_path)
+    if not file_path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found on disk")
+
+    return FileResponse(
+        path=str(file_path),
+        filename=img_file.original_filename,
+        media_type=img_file.mime_type or "application/octet-stream",
+    )
+
+
+@router.get("/files/{file_id}/thumbnail")
+async def file_thumbnail(
+    file_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a JPEG thumbnail for an imaging file. For JPEG/PNG returns the file directly.
+    For DICOM, extracts pixel data and converts to JPEG."""
+    if not check_permission(current_user.role, Permission.VIEW_IMAGING):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
+
+    result = await db.execute(select(ImagingFile).where(ImagingFile.id == file_id))
+    img_file = result.scalar_one_or_none()
+    if not img_file:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found")
+
+    rel_path = img_file.anonymized_path or img_file.file_path
+    file_path = _safe_file_path(rel_path)
+    if not file_path.exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File not found on disk")
+
+    # For JPEG/PNG, serve directly
+    if img_file.mime_type in ("image/jpeg", "image/png"):
+        return FileResponse(
+            path=str(file_path),
+            media_type=img_file.mime_type,
+        )
+
+    # For DICOM, try to extract pixel data
+    try:
+        import pydicom
+        from PIL import Image
+        import numpy as np
+        import io
+
+        ds = pydicom.dcmread(str(file_path))
+        if not hasattr(ds, 'pixel_array'):
+            raise ValueError("No pixel data")
+
+        arr = ds.pixel_array.astype(float)
+        # Normalize to 0-255
+        if arr.max() > arr.min():
+            arr = (arr - arr.min()) / (arr.max() - arr.min()) * 255.0
+        arr = arr.astype(np.uint8)
+
+        img = Image.fromarray(arr)
+        if img.mode != 'L' and img.mode != 'RGB':
+            img = img.convert('L')
+        # Resize for thumbnail
+        img.thumbnail((512, 512))
+
+        buf = io.BytesIO()
+        img.save(buf, format='JPEG', quality=85)
+        buf.seek(0)
+        return Response(content=buf.read(), media_type="image/jpeg")
+    except Exception:
+        # Return a placeholder response
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Cannot generate preview for this DICOM file",
+        )

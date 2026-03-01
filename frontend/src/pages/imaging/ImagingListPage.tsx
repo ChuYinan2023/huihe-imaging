@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Table, Select, Space, Tag, Button, Drawer, Descriptions, App } from 'antd';
-import { EyeOutlined, SwapOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Table, Select, Space, Tag, Button, Drawer, Descriptions, App, Card, Divider, Spin } from 'antd';
+import { EyeOutlined, SwapOutlined, ExclamationCircleOutlined, DownloadOutlined, FileImageOutlined } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import { imagingService } from '../../services/imagingService';
@@ -16,6 +16,29 @@ const statusMap: Record<string, { color: string; label: string }> = {
   anonymize_failed: { color: 'red', label: '匿名化失败' },
   rejected: { color: 'volcano', label: '已拒绝' },
 };
+
+function FileThumbnail({ fileId }: { fileId: number }) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let revoke = '';
+    imagingService.getThumbnail(fileId)
+      .then((res) => {
+        const url = URL.createObjectURL(res.data);
+        revoke = url;
+        setSrc(url);
+      })
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+    return () => { if (revoke) URL.revokeObjectURL(revoke); };
+  }, [fileId]);
+
+  if (loading) return <Spin size="small" />;
+  if (error || !src) return <FileImageOutlined style={{ fontSize: 48, color: '#666' }} />;
+  return <img src={src} alt="" style={{ maxHeight: 160, maxWidth: '100%', objectFit: 'contain' }} />;
+}
 
 export default function ImagingListPage() {
   const { message } = App.useApp();
@@ -237,25 +260,63 @@ export default function ImagingListPage() {
         ) : null}
       >
         {detail && (
-          <Descriptions column={1} bordered size="small">
-            <Descriptions.Item label="项目">{detail.project_name}</Descriptions.Item>
-            <Descriptions.Item label="中心">{detail.center_name}</Descriptions.Item>
-            <Descriptions.Item label="受试者编号">{detail.screening_number}</Descriptions.Item>
-            <Descriptions.Item label="访视点">{detail.visit_point}</Descriptions.Item>
-            <Descriptions.Item label="影像类型">{detail.imaging_type}</Descriptions.Item>
-            <Descriptions.Item label="状态">
-              {(() => {
-                const s = statusMap[detail.status] ?? { color: 'default', label: detail.status };
-                return <Tag color={s.color}>{s.label}</Tag>;
-              })()}
-            </Descriptions.Item>
-            <Descriptions.Item label="创建时间">
-              {detail.created_at ? dayjs(detail.created_at).format('YYYY-MM-DD HH:mm:ss') : '-'}
-            </Descriptions.Item>
-            <Descriptions.Item label="更新时间">
-              {detail.updated_at ? dayjs(detail.updated_at).format('YYYY-MM-DD HH:mm:ss') : '-'}
-            </Descriptions.Item>
-          </Descriptions>
+          <>
+            <Descriptions column={1} bordered size="small">
+              <Descriptions.Item label="项目">{detail.project_name}</Descriptions.Item>
+              <Descriptions.Item label="中心">{detail.center_name}</Descriptions.Item>
+              <Descriptions.Item label="受试者编号">{detail.screening_number}</Descriptions.Item>
+              <Descriptions.Item label="访视点">{detail.visit_point}</Descriptions.Item>
+              <Descriptions.Item label="影像类型">{detail.imaging_type}</Descriptions.Item>
+              <Descriptions.Item label="状态">
+                {(() => {
+                  const s = statusMap[detail.status] ?? { color: 'default', label: detail.status };
+                  return <Tag color={s.color}>{s.label}</Tag>;
+                })()}
+              </Descriptions.Item>
+              <Descriptions.Item label="创建时间">
+                {detail.created_at ? dayjs(detail.created_at).format('YYYY-MM-DD HH:mm:ss') : '-'}
+              </Descriptions.Item>
+              <Descriptions.Item label="文件数量">{detail.files?.length ?? 0}</Descriptions.Item>
+            </Descriptions>
+
+            {detail.files && detail.files.length > 0 && (
+              <>
+                <Divider>影像文件预览</Divider>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                  {detail.files.map((f: any) => (
+                    <Card
+                      key={f.id}
+                      size="small"
+                      style={{ width: 220 }}
+                      cover={
+                        <div style={{ height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', overflow: 'hidden' }}>
+                          <FileThumbnail fileId={f.id} />
+                        </div>
+                      }
+                      actions={[
+                        <Button key="download" type="link" icon={<DownloadOutlined />} onClick={async () => {
+                          try {
+                            const res = await imagingService.downloadFile(f.id);
+                            const url = URL.createObjectURL(res.data);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = f.original_filename;
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          } catch { message.error('下载失败'); }
+                        }}>下载</Button>,
+                      ]}
+                    >
+                      <Card.Meta
+                        title={<span style={{ fontSize: 12 }}>{f.original_filename}</span>}
+                        description={<span style={{ fontSize: 11, color: '#999' }}>{(f.file_size / 1024).toFixed(1)} KB</span>}
+                      />
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
         )}
       </Drawer>
     </div>

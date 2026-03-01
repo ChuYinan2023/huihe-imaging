@@ -72,7 +72,7 @@
     <header>
         <div class="container">
             <h1>汇禾影像管理系统 (Huihe Imaging)</h1>
-            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 20:35</p>
+            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 20:39</p>
         </div>
     </header>
 
@@ -83,9 +83,9 @@
                 <div class="progress-card">
                     <h3>功能清单完成度 (F-01 ~ F-57)</h3>
                     <div class="progress-bar-wrap">
-                        <div class="progress-bar high" style="width: 82%">82%</div>
+                        <div class="progress-bar high" style="width: 84%">84%</div>
                     </div>
-                    <div class="progress-label">44 / 57 项已完成</div>
+                    <div class="progress-label">45 / 57 项已完成</div>
                 </div>
                 <div class="progress-card">
                     <h3>页面清单完成度</h3>
@@ -145,7 +145,7 @@
 <tr><td>F-27</td><td>影像中心</td><td>多维筛选</td><td class="status-done">已完成</td></tr>
 <tr><td>F-28</td><td>影像中心</td><td>受试者视图</td><td class="status-done">已完成</td></tr>
 <tr><td>F-29</td><td>影像中心</td><td>影像详情</td><td class="status-done">已完成</td></tr>
-<tr><td>F-30</td><td>影像中心</td><td>影像文件预览</td><td class="status-todo">待开发</td></tr>
+<tr><td>F-30</td><td>影像中心</td><td>影像文件预览</td><td class="status-done">已完成</td></tr>
 <tr><td>F-31</td><td>影像质控</td><td>审阅影像</td><td class="status-todo">待开发</td></tr>
 <tr><td>F-32</td><td>影像质控</td><td>标记状态</td><td class="status-todo">待开发</td></tr>
 <tr><td>F-33</td><td>问题追踪</td><td>创建问题</td><td class="status-done">已完成</td></tr>
@@ -200,6 +200,16 @@
         <div class="progress-section changelog">
             <h2>更新日志</h2>
             <div class="timeline">
+
+                <div class="timeline-item">
+                    <div class="timeline-dot feat"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 20:45 (PST)</div>
+                        <div class="timeline-title"><span class="tag feat" style="color:#fff">feat</span>影像文件预览与下载（F-30）+ 问题创建反馈优化</div>
+                        <div class="timeline-desc">新增影像文件预览和下载功能：<br><br>后端：<br>• GET /api/imaging/files/{id}/thumbnail — 返回缩略图（JPEG/PNG 直接返回，DICOM 提取像素数据转 JPEG）<br>• GET /api/imaging/files/{id}/download — 下载原始文件（优先返回脱敏版本）<br>• 路径遍历防护（_safe_file_path）<br><br>前端：<br>• 影像详情 Drawer 新增文件预览区域，每个文件显示缩略图卡片 + 下载按钮<br>• 通过 axios blob 请求获取缩略图，携带 Authorization header<br>• 问题创建成功后自动跳转问题详情页，提供明确反馈</div>
+                        <div class="timeline-hash"></div>
+                    </div>
+                </div>
 
                 <div class="timeline-item">
                     <div class="timeline-dot feat"></div>

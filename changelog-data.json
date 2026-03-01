@@ -29,7 +29,7 @@
     {"id": "F-27", "module": "影像中心", "name": "多维筛选", "status": "done"},
     {"id": "F-28", "module": "影像中心", "name": "受试者视图", "status": "done"},
     {"id": "F-29", "module": "影像中心", "name": "影像详情", "status": "done"},
-    {"id": "F-30", "module": "影像中心", "name": "影像文件预览", "status": "todo"},
+    {"id": "F-30", "module": "影像中心", "name": "影像文件预览", "status": "done"},
     {"id": "F-31", "module": "影像质控", "name": "审阅影像", "status": "todo"},
     {"id": "F-32", "module": "影像质控", "name": "标记状态", "status": "todo"},
     {"id": "F-33", "module": "问题追踪", "name": "创建问题", "status": "done"},
@@ -85,6 +85,12 @@
     "frontend_review_total": 18
   },
   "entries": [
+    {
+      "date": "2026-02-28 20:45 (PST)",
+      "tag": "feat",
+      "title": "影像文件预览与下载（F-30）+ 问题创建反馈优化",
+      "desc": "新增影像文件预览和下载功能：\n\n后端：\n• GET /api/imaging/files/{id}/thumbnail — 返回缩略图（JPEG/PNG 直接返回，DICOM 提取像素数据转 JPEG）\n• GET /api/imaging/files/{id}/download — 下载原始文件（优先返回脱敏版本）\n• 路径遍历防护（_safe_file_path）\n\n前端：\n• 影像详情 Drawer 新增文件预览区域，每个文件显示缩略图卡片 + 下载按钮\n• 通过 axios blob 请求获取缩略图，携带 Authorization header\n• 问题创建成功后自动跳转问题详情页，提供明确反馈"
+    },
     {
       "date": "2026-02-28 20:30 (PST)",
       "tag": "feat",
