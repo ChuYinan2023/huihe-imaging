@@ -15,7 +15,9 @@ def test_issue2_default_secrets_accepted_in_non_debug(monkeypatch):
     monkeypatch.setenv("DEBUG", "false")
     monkeypatch.setenv("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
 
-    # Force re-import to pick up new env
+    # Intentionally duplicates app.core.config.Settings because we cannot
+    # re-import the module-level singleton. If Settings gains a @model_validator,
+    # this duplicate must be updated to match.
     from pydantic_settings import BaseSettings
     from pathlib import Path
 

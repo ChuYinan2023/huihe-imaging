@@ -105,12 +105,13 @@ async def test_issue8_audit_response_field_names(client, db_session, admin_user)
     assert data["total"] >= 1
 
     item = data["items"][0]
+    # Core fields that must always be present (use issubset so future fields don't break test)
     expected_fields = {"id", "operator_id", "ip", "user_agent", "timestamp", "action",
                        "resource_type", "resource_id", "before_value", "after_value"}
 
     actual_fields = set(item.keys())
-    assert expected_fields == actual_fields, (
-        f"Expected fields {expected_fields}, got {actual_fields}"
+    assert expected_fields.issubset(actual_fields), (
+        f"Missing expected fields: {expected_fields - actual_fields}"
     )
 
     # Document: backend returns "timestamp", NOT "created_at"

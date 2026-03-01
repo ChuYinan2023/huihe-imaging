@@ -142,30 +142,18 @@ async def _get_token(client, username: str, password: str) -> str:
     return resp.json()["access_token"]
 
 
-@pytest.mark.asyncio
-@pytest.mark.xfail(reason="Review Issue #5: report upload has no file size limit")
-async def test_issue5_report_upload_no_size_limit(
-    client, db_session, expert_user, report_test_data
-):
-    """Uploading a very large PDF should be rejected with 413.
-    CURRENT: No size check — any size is accepted."""
-    project, center, subject, session = report_test_data
-    token = await _get_token(client, "expertreportrev", "ExpertPass123!")
-
-    # Create a ~2MB fake PDF (small enough for test, but tests the check)
-    large_content = b"%PDF-1.4\n" + b"x" * (2 * 1024 * 1024)
-
-    response = await client.post(
-        "/api/reports/upload",
-        files={"file": ("large_report.pdf", io.BytesIO(large_content), "application/pdf")},
-        data={"session_id": str(session.id)},
-        headers={"Authorization": f"Bearer {token}"},
-    )
-    # The upload should enforce a size limit (e.g., MAX_FILE_SIZE_MB)
-    # CURRENT: Returns 201 regardless of size
-    assert response.status_code == 413, (
-        f"Expected 413 for oversized upload, got {response.status_code}"
-    )
+@pytest.mark.xfail(reason="Review Issue #5: report upload reads entire file into memory without size limit")
+def test_issue5_report_upload_no_size_limit():
+    """Report upload handler should use streaming reads with size limit
+    (like imaging upload does), NOT file.read() which loads all into memory.
+    CURRENT: Uses `content = await file.read()` with no size check."""
+    from app.api import reports as reports_module
+    source = inspect.getsource(reports_module.upload_report)
+    # The handler should NOT use file.read() which loads entire file into memory
+    has_streaming = "file.read(8192)" in source or "file.read(4096)" in source
+    has_size_check = "MAX_FILE_SIZE_MB" in source or "413" in source
+    assert has_streaming, "upload_report should use chunked streaming reads, not file.read()"
+    assert has_size_check, "upload_report should enforce MAX_FILE_SIZE_MB limit"
 
 
 @pytest.mark.asyncio
@@ -259,8 +247,23 @@ async def test_issue11_double_log_entries_from_pending(
 
 
 def test_issue13_validate_file_dcm_octet_stream_passes():
-    """validate_file should accept .dcm with application/octet-stream."""
+    """validate_file should accept .dcm with application/octet-stream.
+    NOTE: This passes via the normal ALLOWED_MIMES path (line 9), NOT the
+    dead code special case on line 21. The .dcm+octet-stream branch is
+    unreachable because octet-stream is already in ALLOWED_MIMES."""
     assert validate_file("scan.dcm", "application/octet-stream") is True
+
+
+def test_issue13_dead_code_branch_unreachable():
+    """Documents that the .dcm special case (line 21) is dead code.
+    The branch `if ext == '.dcm' and content_type == 'application/octet-stream'`
+    is inside `if content_type not in ALLOWED_MIMES`, but 'application/octet-stream'
+    IS in ALLOWED_MIMES, so the outer condition is never true for octet-stream."""
+    from app.services.upload_service import ALLOWED_MIMES
+    # This proves the dead code: octet-stream is already allowed
+    assert "application/octet-stream" in ALLOWED_MIMES, (
+        "octet-stream in ALLOWED_MIMES means line 21 special case is unreachable"
+    )
 
 
 def test_issue13_validate_file_exe_rejected():
@@ -274,6 +277,11 @@ def test_issue16_uid_deterministic():
     uid2 = generate_uid("1.2.840.10008.1.1", "test-salt")
     assert uid1 == uid2
     assert uid1.startswith("2.25.")
+    # DICOM UID format: max 64 chars, only digits and dots
+    assert len(uid1) <= 64, f"DICOM UID exceeds 64 chars: {len(uid1)}"
+    assert all(c.isdigit() or c == '.' for c in uid1), (
+        f"DICOM UID contains invalid characters: {uid1}"
+    )
 
 
 def test_issue16_uid_different_salt():
@@ -281,11 +289,23 @@ def test_issue16_uid_different_salt():
     uid1 = generate_uid("1.2.840.10008.1.1", "salt-A")
     uid2 = generate_uid("1.2.840.10008.1.1", "salt-B")
     assert uid1 != uid2
+    # Both should still be valid DICOM UIDs
+    for uid in (uid1, uid2):
+        assert len(uid) <= 64, f"DICOM UID exceeds 64 chars: {len(uid)}"
+        assert all(c.isdigit() or c == '.' for c in uid), (
+            f"DICOM UID contains invalid characters: {uid}"
+        )
 
 
 def test_issue17_signature_hardcoded_a4():
     """Documents that compose_signature uses hardcoded A4 page size
-    and fixed coordinate values."""
+    and fixed coordinate values.
+
+    NOTE: This test uses source inspection which is inherently fragile —
+    comments, variable names, or unrelated literals could match. This is
+    a documentation-style test, not a behavioral test. When refactoring
+    compose_signature to accept page size parameters, replace this with
+    a behavioral test that verifies different page sizes produce different output."""
     source = inspect.getsource(compose_signature)
     assert "A4" in source, "compose_signature should reference A4 page size"
     # Check for hardcoded coordinates (400, 50) and dimensions (120, 60)
