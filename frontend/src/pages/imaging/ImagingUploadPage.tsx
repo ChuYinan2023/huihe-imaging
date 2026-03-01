@@ -195,18 +195,24 @@ export default function ImagingUploadPage() {
 
       setUploading(false);
 
-      if (completed === fileList.length) {
+      if (completed > 0) {
         // Complete session — transition to anonymizing
         try {
           await imagingService.completeSession(sessionId);
         } catch {
           // Non-fatal: files are already uploaded
         }
-        message.success('所有文件上传成功');
-        setCurrent(3);
-      } else {
-        message.warning(`${completed}/${fileList.length} 个文件上传成功`);
       }
+
+      if (completed === fileList.length) {
+        message.success('所有文件上传成功');
+      } else if (completed > 0) {
+        message.warning(`${completed}/${fileList.length} 个文件上传成功`);
+      } else {
+        message.error('所有文件上传失败');
+      }
+      setUploadedCount(completed);
+      setCurrent(3);
     } catch {
       setUploading(false);
       message.error('创建上传会话失败');
@@ -361,12 +367,13 @@ export default function ImagingUploadPage() {
           </div>
         );
 
-      case 3:
+      case 3: {
+        const allSuccess = uploadedCount === fileList.length;
         return (
           <Result
-            status="success"
-            title="上传完成"
-            subTitle={`成功上传 ${uploadedCount} 个文件`}
+            status={allSuccess ? "success" : "warning"}
+            title={allSuccess ? "上传完成" : "部分上传成功"}
+            subTitle={`成功上传 ${uploadedCount} / ${fileList.length} 个文件`}
             extra={[
               <Button type="primary" key="list" onClick={() => navigate('/imaging')}>
                 查看影像列表
@@ -382,6 +389,7 @@ export default function ImagingUploadPage() {
             ]}
           />
         );
+      }
 
       default:
         return null;
