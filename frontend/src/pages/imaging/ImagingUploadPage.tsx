@@ -364,6 +364,14 @@ export default function ImagingUploadPage() {
                 </Button>
               </div>
             )}
+
+            {!uploading && fileStatuses.length > 0 && fileStatuses.every(fs => fs.status !== 'uploading') && (
+              <div style={{ marginTop: 24, textAlign: 'center' }}>
+                <Button type="primary" size="large" onClick={() => setCurrent(3)}>
+                  {fileStatuses.every(fs => fs.status === 'done') ? '完成' : '查看结果'}
+                </Button>
+              </div>
+            )}
           </div>
         );
 
