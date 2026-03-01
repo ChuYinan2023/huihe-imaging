@@ -71,7 +71,7 @@ export default function ImagingListPage() {
       if (projectId) params.project_id = projectId;
       if (centerId) params.center_id = centerId;
       if (subjectId) params.subject_id = subjectId;
-      if (status) params.status = status;
+      if (status) params.status_filter = status;
       if (visitPoint) params.visit_point = visitPoint;
 
       const res = subjectView

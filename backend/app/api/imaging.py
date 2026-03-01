@@ -12,6 +12,7 @@ from app.core.database import get_db
 from app.core.permissions import check_permission, Permission
 from app.models.user import User, UserRole
 from app.models.imaging import ImagingSession, ImagingFile, ImagingStatus
+from app.models.project import Project, Center, Subject
 from app.services.state_machine import ImagingFSM
 from app.services.upload_service import validate_file, generate_stored_filename
 from app.services.audit_service import AuditService
@@ -214,63 +215,120 @@ async def list_sessions(
     if not check_permission(current_user.role, Permission.VIEW_IMAGING):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
 
-    query = select(ImagingSession)
-    count_query = select(func.count(ImagingSession.id))
-
+    filters = []
     if project_id is not None:
-        query = query.where(ImagingSession.project_id == project_id)
-        count_query = count_query.where(ImagingSession.project_id == project_id)
+        filters.append(ImagingSession.project_id == project_id)
     if center_id is not None:
-        query = query.where(ImagingSession.center_id == center_id)
-        count_query = count_query.where(ImagingSession.center_id == center_id)
+        filters.append(ImagingSession.center_id == center_id)
     if subject_id is not None:
-        query = query.where(ImagingSession.subject_id == subject_id)
-        count_query = count_query.where(ImagingSession.subject_id == subject_id)
+        filters.append(ImagingSession.subject_id == subject_id)
     if status_filter is not None:
-        query = query.where(ImagingSession.status == status_filter)
-        count_query = count_query.where(ImagingSession.status == status_filter)
+        filters.append(ImagingSession.status == status_filter)
     if visit_point is not None:
-        query = query.where(ImagingSession.visit_point == visit_point)
-        count_query = count_query.where(ImagingSession.visit_point == visit_point)
+        filters.append(ImagingSession.visit_point == visit_point)
 
+    count_query = select(func.count(ImagingSession.id)).where(*filters) if filters else select(func.count(ImagingSession.id))
     total_result = await db.execute(count_query)
     total = total_result.scalar()
 
-    offset = (page - 1) * page_size
-    result = await db.execute(
-        query.order_by(ImagingSession.id.desc()).offset(offset).limit(page_size)
+    query = (
+        select(ImagingSession, Subject.screening_number, Project.name.label("project_name"), Center.name.label("center_name"))
+        .join(Subject, ImagingSession.subject_id == Subject.id)
+        .join(Project, ImagingSession.project_id == Project.id)
+        .join(Center, ImagingSession.center_id == Center.id)
     )
-    sessions = result.scalars().all()
+    if filters:
+        query = query.where(*filters)
+
+    offset = (page - 1) * page_size
+    rows = (await db.execute(
+        query.order_by(ImagingSession.id.desc()).offset(offset).limit(page_size)
+    )).all()
+
+    items = []
+    for session, screening_number, project_name, center_name in rows:
+        item = _session_response(session)
+        item["screening_number"] = screening_number
+        item["project_name"] = project_name
+        item["center_name"] = center_name
+        items.append(item)
 
     return {
         "total": total,
         "page": page,
         "page_size": page_size,
-        "items": [_session_response(s) for s in sessions],
+        "items": items,
     }
 
 
 @router.get("/by-subject")
 async def sessions_by_subject(
     project_id: int | None = None,
+    page: int = 1,
+    page_size: int = 20,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     if not check_permission(current_user.role, Permission.VIEW_IMAGING):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
 
-    query = select(ImagingSession)
+    # Build base filter
+    base_filter = []
+    if project_id is not None:
+        base_filter.append(ImagingSession.project_id == project_id)
+
+    # Count distinct subjects
+    count_query = (
+        select(func.count(func.distinct(ImagingSession.subject_id)))
+        .where(*base_filter) if base_filter
+        else select(func.count(func.distinct(ImagingSession.subject_id)))
+    )
+    total_result = await db.execute(count_query)
+    total = total_result.scalar() or 0
+
+    # Get sessions with joins for display names
+    query = (
+        select(ImagingSession, Subject.screening_number, Project.name.label("project_name"), Center.name.label("center_name"))
+        .join(Subject, ImagingSession.subject_id == Subject.id)
+        .join(Project, ImagingSession.project_id == Project.id)
+        .join(Center, ImagingSession.center_id == Center.id)
+    )
     if project_id is not None:
         query = query.where(ImagingSession.project_id == project_id)
+    query = query.order_by(ImagingSession.subject_id, ImagingSession.id)
 
-    result = await db.execute(query.order_by(ImagingSession.subject_id, ImagingSession.id))
-    sessions = result.scalars().all()
+    rows = (await db.execute(query)).all()
 
-    grouped: dict[int, list[dict]] = {}
-    for s in sessions:
-        grouped.setdefault(s.subject_id, []).append(_session_response(s))
+    # Group by subject
+    grouped: dict[int, dict] = {}
+    for session, screening_number, project_name, center_name in rows:
+        sid = session.subject_id
+        if sid not in grouped:
+            grouped[sid] = {
+                "id": sid,
+                "screening_number": screening_number,
+                "project_name": project_name,
+                "center_name": center_name,
+                "session_count": 0,
+                "latest_status": None,
+                "latest_created_at": None,
+            }
+        grouped[sid]["session_count"] += 1
+        # Track latest status by created_at
+        if grouped[sid]["latest_created_at"] is None or (session.created_at and session.created_at > grouped[sid]["latest_created_at"]):
+            grouped[sid]["latest_created_at"] = session.created_at
+            grouped[sid]["latest_status"] = session.status.value if session.status else None
 
-    return {"subjects": grouped}
+    items = list(grouped.values())
+    # Paginate
+    start = (page - 1) * page_size
+    paginated = items[start:start + page_size]
+
+    # Remove internal field
+    for item in paginated:
+        item.pop("latest_created_at", None)
+
+    return {"items": paginated, "total": total}
 
 
 @router.get("/{session_id}")
