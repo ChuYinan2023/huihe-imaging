@@ -301,7 +301,7 @@ export default function ImagingUploadPage() {
       case 2:
         return (
           <div style={{ maxWidth: 600 }}>
-            {!uploading && (
+            {!uploading && fileStatuses.length === 0 && (
               <Dragger
                 multiple
                 beforeUpload={(file) => {
@@ -328,7 +328,7 @@ export default function ImagingUploadPage() {
               </Dragger>
             )}
 
-            {uploading && fileStatuses.length > 0 && (
+            {fileStatuses.length > 0 && (
               <Space direction="vertical" style={{ width: '100%' }} size="small">
                 {fileStatuses.map((fs) => (
                   <Card key={fs.uid} size="small">
@@ -346,7 +346,7 @@ export default function ImagingUploadPage() {
               </Space>
             )}
 
-            {!uploading && fileList.length > 0 && (
+            {!uploading && fileStatuses.length === 0 && fileList.length > 0 && (
               <div style={{ marginTop: 16, textAlign: 'center' }}>
                 <Button type="primary" size="large" onClick={handleUpload}>
                   开始上传 ({fileList.length} 个文件)
