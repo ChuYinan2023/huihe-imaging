@@ -193,18 +193,23 @@ export default function ImagingUploadPage() {
         }
       }
 
+      setUploading(false);
+
       if (completed === fileList.length) {
         // Complete session — transition to anonymizing
-        await imagingService.completeSession(sessionId);
+        try {
+          await imagingService.completeSession(sessionId);
+        } catch {
+          // Non-fatal: files are already uploaded
+        }
         message.success('所有文件上传成功');
         setCurrent(3);
       } else {
         message.warning(`${completed}/${fileList.length} 个文件上传成功`);
       }
     } catch {
-      message.error('创建上传会话失败');
-    } finally {
       setUploading(false);
+      message.error('创建上传会话失败');
     }
   };
 
