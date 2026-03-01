@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Table, Select, Space, Tag, Button, Drawer, Descriptions, App } from 'antd';
-import { EyeOutlined, SwapOutlined } from '@ant-design/icons';
-import { useSearchParams } from 'react-router-dom';
+import { EyeOutlined, SwapOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import { imagingService } from '../../services/imagingService';
 import { projectService } from '../../services/projectService';
+import { useAuthStore } from '../../stores/auth';
 import dayjs from 'dayjs';
 
 const statusMap: Record<string, { color: string; label: string }> = {
@@ -18,6 +19,9 @@ const statusMap: Record<string, { color: string; label: string }> = {
 
 export default function ImagingListPage() {
   const { message } = App.useApp();
+  const navigate = useNavigate();
+  const user = useAuthStore((s) => s.user);
+  const canCreateIssue = ['admin', 'expert', 'pm', 'crc', 'cra'].includes(user?.role ?? '');
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -142,9 +146,16 @@ export default function ImagingListPage() {
           title: '操作',
           key: 'actions',
           render: (_: unknown, record: any) => (
-            <Button type="link" icon={<EyeOutlined />} onClick={() => showDetail(record)}>
-              详情
-            </Button>
+            <Space size="small">
+              <Button type="link" icon={<EyeOutlined />} onClick={() => showDetail(record)}>
+                详情
+              </Button>
+              {canCreateIssue && (
+                <Button type="link" icon={<ExclamationCircleOutlined />} onClick={() => navigate('/issues', { state: { sessionId: record.id } })}>
+                  发起问题
+                </Button>
+              )}
+            </Space>
           ),
         },
       ];
@@ -216,6 +227,14 @@ export default function ImagingListPage() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         width={520}
+        extra={canCreateIssue && detail ? (
+          <Button type="primary" icon={<ExclamationCircleOutlined />} onClick={() => {
+            setDrawerOpen(false);
+            navigate('/issues', { state: { sessionId: detail.id } });
+          }}>
+            发起问题
+          </Button>
+        ) : null}
       >
         {detail && (
           <Descriptions column={1} bordered size="small">

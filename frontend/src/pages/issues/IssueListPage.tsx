@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Table, Select, Space, Tag, Button, Modal, Form, Input, App } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { issueService } from '../../services/issueService';
 import { projectService } from '../../services/projectService';
 import { imagingService } from '../../services/imagingService';
@@ -19,6 +19,7 @@ const statusMap: Record<string, { color: string; label: string }> = {
 export default function IssueListPage() {
   const { message } = App.useApp();
   const navigate = useNavigate();
+  const location = useLocation();
   const user = useAuthStore((s) => s.user);
   const canCreateIssue = ['admin', 'expert', 'pm', 'crc', 'cra'].includes(user?.role ?? '');
 
@@ -42,6 +43,21 @@ export default function IssueListPage() {
   const [submitting, setSubmitting] = useState(false);
   const [sessions, setSessions] = useState<any[]>([]);
   const [form] = Form.useForm();
+
+  // Auto-open create modal if navigated from imaging detail with sessionId
+  useEffect(() => {
+    const state = location.state as { sessionId?: number } | null;
+    if (state?.sessionId && canCreateIssue) {
+      // Load sessions then open modal with pre-selected session
+      imagingService.list({ page: 1, page_size: 100 }).then((res) => {
+        setSessions(res.data.items ?? res.data ?? []);
+        form.setFieldsValue({ session_id: state.sessionId });
+        setCreateOpen(true);
+      }).catch(() => {});
+      // Clear navigation state to prevent re-opening on re-render
+      window.history.replaceState({}, '');
+    }
+  }, [location.state, canCreateIssue, form]);
 
   useEffect(() => {
     projectService.list(1, 100).then((res) => {

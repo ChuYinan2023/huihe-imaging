@@ -72,7 +72,7 @@
     <header>
         <div class="container">
             <h1>汇禾影像管理系统 (Huihe Imaging)</h1>
-            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 20:18</p>
+            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 20:32</p>
         </div>
     </header>
 
@@ -200,6 +200,16 @@
         <div class="progress-section changelog">
             <h2>更新日志</h2>
             <div class="timeline">
+
+                <div class="timeline-item">
+                    <div class="timeline-dot feat"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 20:30 (PST)</div>
+                        <div class="timeline-title"><span class="tag feat" style="color:#fff">feat</span>完善 Expert 主流程：影像问题追踪入口 + 项目成员补全</div>
+                        <div class="timeline-desc">修复 Expert 角色无法正常走完主流程的问题：<br><br>1. 种子数据补全项目成员：Expert、CRA、DM 加入 project_users 表（此前仅 PM 和 CRC 有项目绑定）<br>2. 影像列表每行新增「发起问题」操作按钮，直接跳转问题管理页并预选影像会话<br>3. 影像详情 Drawer 右上角新增「发起问题」按钮<br>4. 问题管理页支持从影像页跳转时自动打开创建弹窗并预填 session_id<br><br>涉及文件：<br>• seed.py — 补全 Expert/CRA/DM 项目绑定<br>• ImagingListPage.tsx — 新增问题入口按钮<br>• IssueListPage.tsx — 支持 navigation state 预填会话</div>
+                        <div class="timeline-hash"></div>
+                    </div>
+                </div>
 
                 <div class="timeline-item">
                     <div class="timeline-dot fix"></div>

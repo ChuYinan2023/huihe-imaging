@@ -86,6 +86,12 @@
   },
   "entries": [
     {
+      "date": "2026-02-28 20:30 (PST)",
+      "tag": "feat",
+      "title": "完善 Expert 主流程：影像问题追踪入口 + 项目成员补全",
+      "desc": "修复 Expert 角色无法正常走完主流程的问题：\n\n1. 种子数据补全项目成员：Expert、CRA、DM 加入 project_users 表（此前仅 PM 和 CRC 有项目绑定）\n2. 影像列表每行新增「发起问题」操作按钮，直接跳转问题管理页并预选影像会话\n3. 影像详情 Drawer 右上角新增「发起问题」按钮\n4. 问题管理页支持从影像页跳转时自动打开创建弹窗并预填 session_id\n\n涉及文件：\n• seed.py — 补全 Expert/CRA/DM 项目绑定\n• ImagingListPage.tsx — 新增问题入口按钮\n• IssueListPage.tsx — 支持 navigation state 预填会话"
+    },
+    {
       "date": "2026-02-28 20:00 (PST)",
       "tag": "fix",
       "title": "修复前端交互 Review 11 项问题（F-01~F-12）",

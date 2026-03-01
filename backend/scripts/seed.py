@@ -43,10 +43,13 @@ async def seed():
         session.add(project)
         await session.flush()
 
-        # Assign PM and CRC to project
+        # Assign users to project
         session.add_all([
             ProjectUser(user_id=users[1].id, project_id=project.id),  # PM
+            ProjectUser(user_id=users[2].id, project_id=project.id),  # Expert
             ProjectUser(user_id=users[3].id, project_id=project.id),  # CRC
+            ProjectUser(user_id=users[4].id, project_id=project.id),  # CRA
+            ProjectUser(user_id=users[5].id, project_id=project.id),  # DM
         ])
 
         # Create centers
