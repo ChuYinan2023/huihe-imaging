@@ -111,15 +111,24 @@ export default function IssueListPage() {
   };
 
   const handleCreate = async () => {
+    let values;
     try {
-      const values = await form.validateFields();
-      setSubmitting(true);
-      await issueService.create(values);
-      message.success('问题已创建');
+      values = await form.validateFields();
+    } catch {
+      return; // validation failed, form shows errors
+    }
+    setSubmitting(true);
+    try {
+      const res = await issueService.create(values);
       setCreateOpen(false);
-      fetchData();
-    } catch (err: any) {
-      if (err?.errorFields) return;
+      form.resetFields();
+      message.success('问题已创建，ID: ' + (res.data?.id ?? ''));
+      await fetchData();
+      // Navigate to the new issue detail
+      if (res.data?.id) {
+        navigate(`/issues/${res.data.id}`);
+      }
+    } catch {
       message.error('创建失败');
     } finally {
       setSubmitting(false);
