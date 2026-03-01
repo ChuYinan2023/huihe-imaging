@@ -123,11 +123,7 @@ export default function IssueListPage() {
       setCreateOpen(false);
       form.resetFields();
       message.success('问题已创建，ID: ' + (res.data?.id ?? ''));
-      await fetchData();
-      // Navigate to the new issue detail
-      if (res.data?.id) {
-        navigate(`/issues/${res.data.id}`);
-      }
+      fetchData();
     } catch {
       message.error('创建失败');
     } finally {
