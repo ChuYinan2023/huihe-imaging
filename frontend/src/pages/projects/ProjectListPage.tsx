@@ -15,8 +15,17 @@ interface Project {
 
 interface Center {
   id: number;
+  project_id: number;
   code: string;
   name: string;
+}
+
+interface Subject {
+  id: number;
+  center_id: number;
+  project_id: number;
+  screening_number: string;
+  created_at: string;
 }
 
 const statusMap: Record<string, { color: string; label: string }> = {
@@ -47,6 +56,16 @@ export default function ProjectListPage() {
   // Expanded row centers cache
   const [centersMap, setCentersMap] = useState<Record<number, Center[]>>({});
   const [centersLoading, setCentersLoading] = useState<Record<number, boolean>>({});
+
+  // Subject modal
+  const [subjectModalOpen, setSubjectModalOpen] = useState(false);
+  const [subjectProjectId, setSubjectProjectId] = useState<number | null>(null);
+  const [subjectCenterId, setSubjectCenterId] = useState<number | null>(null);
+  const [subjectForm] = Form.useForm();
+
+  // Expanded center subjects cache
+  const [subjectsMap, setSubjectsMap] = useState<Record<number, Subject[]>>({});
+  const [subjectsLoading, setSubjectsLoading] = useState<Record<number, boolean>>({});
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -140,6 +159,45 @@ export default function ProjectListPage() {
     }
   };
 
+  const fetchSubjects = async (projectId: number, centerId: number) => {
+    const key = centerId;
+    setSubjectsLoading(prev => ({ ...prev, [key]: true }));
+    try {
+      const res = await projectService.listSubjects(projectId);
+      const all: Subject[] = res.data.items ?? res.data;
+      const filtered = all.filter((s: Subject) => s.center_id === centerId);
+      setSubjectsMap(prev => ({ ...prev, [key]: filtered }));
+    } catch {
+      message.error('获取受试者列表失败');
+    } finally {
+      setSubjectsLoading(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
+  const openAddSubject = (projectId: number, centerId: number) => {
+    setSubjectProjectId(projectId);
+    setSubjectCenterId(centerId);
+    subjectForm.resetFields();
+    setSubjectModalOpen(true);
+  };
+
+  const handleSubjectSubmit = async () => {
+    if (!subjectProjectId || !subjectCenterId) return;
+    try {
+      const values = await subjectForm.validateFields();
+      setSubmitting(true);
+      await projectService.addSubject(subjectProjectId, subjectCenterId, values);
+      message.success('受试者添加成功');
+      setSubjectModalOpen(false);
+      fetchSubjects(subjectProjectId, subjectCenterId);
+    } catch (err: any) {
+      if (err?.errorFields) return;
+      message.error(err?.response?.data?.detail ?? '添加受试者失败');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const columns: ColumnsType<Project> = [
     { title: '项目编号', dataIndex: 'code', key: 'code' },
     { title: '项目名称', dataIndex: 'name', key: 'name' },
@@ -169,6 +227,40 @@ export default function ProjectListPage() {
     },
   ];
 
+  const subjectColumns: ColumnsType<Subject> = [
+    { title: '筛选号', dataIndex: 'screening_number', key: 'screening_number' },
+    {
+      title: '创建时间',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      render: (val: string) => val ? new Date(val).toLocaleDateString('zh-CN') : '-',
+    },
+  ];
+
+  const centerExpandedRowRender = (projectId: number) => (center: Center) => {
+    const subjects = subjectsMap[center.id] ?? [];
+    const isLoading = subjectsLoading[center.id] ?? false;
+
+    return (
+      <div style={{ padding: '8px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+          <strong>受试者列表</strong>
+          <Button size="small" type="primary" icon={<PlusOutlined />} onClick={() => openAddSubject(projectId, center.id)}>
+            添加受试者
+          </Button>
+        </div>
+        <Table
+          rowKey="id"
+          columns={subjectColumns}
+          dataSource={subjects}
+          loading={isLoading}
+          pagination={false}
+          size="small"
+        />
+      </div>
+    );
+  };
+
   const centerColumns: ColumnsType<Center> = [
     { title: '中心编号', dataIndex: 'code', key: 'code' },
     { title: '中心名称', dataIndex: 'name', key: 'name' },
@@ -193,6 +285,14 @@ export default function ProjectListPage() {
           loading={isLoading}
           pagination={false}
           size="small"
+          expandable={{
+            expandedRowRender: centerExpandedRowRender(record.id),
+            onExpand: (expanded, center) => {
+              if (expanded && !subjectsMap[center.id]) {
+                fetchSubjects(record.id, center.id);
+              }
+            },
+          }}
         />
       </div>
     );
@@ -284,6 +384,27 @@ export default function ProjectListPage() {
             rules={[{ required: true, message: '请输入中心名称' }]}
           >
             <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="添加受试者"
+        open={subjectModalOpen}
+        onOk={handleSubjectSubmit}
+        onCancel={() => setSubjectModalOpen(false)}
+        confirmLoading={submitting}
+        okText="确定"
+        cancelText="取消"
+        destroyOnClose
+      >
+        <Form form={subjectForm} layout="vertical" preserve={false}>
+          <Form.Item
+            name="screening_number"
+            label="筛选号"
+            rules={[{ required: true, message: '请输入受试者筛选号' }]}
+          >
+            <Input placeholder="如 SCR-001" />
           </Form.Item>
         </Form>
       </Modal>
