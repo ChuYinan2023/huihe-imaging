@@ -84,6 +84,13 @@
   },
   "entries": [
     {
+      "date": "2026-02-28 17:45 (PST)",
+      "tag": "feat",
+      "title": "受试者行添加影像导航入口",
+      "desc": "在项目管理页面的受试者表格行中新增「上传影像」和「查看影像」两个操作按钮：\n• 上传影像：跳转至影像上传页面，自动预填项目/中心/受试者三级选择器\n• 查看影像：跳转至影像列表页面，自动按 subject_id 和 project_id 筛选\n\n涉及改动：\n1. ProjectListPage.tsx — 受试者列新增操作列，使用 react-router navigate + state/query params\n2. ImagingUploadPage.tsx — 新增 useLocation + useEffect 从 navigation state 预加载项目/中心/受试者数据并自动选中\n3. ImagingListPage.tsx — 新增 useSearchParams 从 URL 查询参数初始化 projectId 和 subjectId 过滤器",
+      "commits": "91afa19"
+    },
+    {
       "date": "2026-02-28 17:32 (PST)",
       "tag": "fix",
       "title": "修复 Review 测试 5 项质量问题",

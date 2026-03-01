@@ -202,6 +202,16 @@
             <div class="timeline">
 
                 <div class="timeline-item">
+                    <div class="timeline-dot feat"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 17:45 (PST)</div>
+                        <div class="timeline-title"><span class="tag feat" style="color:#fff">feat</span>受试者行添加影像导航入口</div>
+                        <div class="timeline-desc">在项目管理页面的受试者表格行中新增「上传影像」和「查看影像」两个操作按钮：<br>• 上传影像：跳转至影像上传页面，自动预填项目/中心/受试者三级选择器<br>• 查看影像：跳转至影像列表页面，自动按 subject_id 和 project_id 筛选<br><br>涉及改动：<br>1. ProjectListPage.tsx — 受试者列新增操作列，使用 react-router navigate + state/query params<br>2. ImagingUploadPage.tsx — 新增 useLocation + useEffect 从 navigation state 预加载项目/中心/受试者数据并自动选中<br>3. ImagingListPage.tsx — 新增 useSearchParams 从 URL 查询参数初始化 projectId 和 subjectId 过滤器</div>
+                        <div class="timeline-hash">91afa19</div>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
                     <div class="timeline-dot fix"></div>
                     <div class="timeline-content">
                         <div class="timeline-time">2026-02-28 17:32 (PST)</div>
