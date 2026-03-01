@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Steps, Button, Select, Space, App, Upload, Progress, Result, Card } from 'antd';
 import { InboxOutlined, CheckCircleOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { projectService } from '../../services/projectService';
 import { imagingService } from '../../services/imagingService';
 
@@ -36,7 +36,9 @@ const imagingTypeOptions = [
 export default function ImagingUploadPage() {
   const { message } = App.useApp();
   const navigate = useNavigate();
+  const location = useLocation();
   const [current, setCurrent] = useState(0);
+  const [preloaded, setPreloaded] = useState(false);
 
   // Step 1 state
   const [projects, setProjects] = useState<ProjectOption[]>([]);
@@ -58,6 +60,41 @@ export default function ImagingUploadPage() {
   const [fileStatuses, setFileStatuses] = useState<FileStatus[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadedCount, setUploadedCount] = useState(0);
+
+  // Pre-fill from navigation state (e.g. from project page "上传影像" button)
+  useEffect(() => {
+    const state = location.state as { projectId?: number; centerId?: number; subjectId?: number } | null;
+    if (state?.projectId && !preloaded) {
+      setPreloaded(true);
+      const init = async () => {
+        try {
+          // Load projects
+          const projRes = await projectService.list(1, 100);
+          const projList = projRes.data.items ?? projRes.data;
+          setProjects(projList);
+          setProjectId(state.projectId!);
+
+          // Load centers
+          const centerRes = await projectService.listCenters(state.projectId!);
+          const centerList = centerRes.data.items ?? centerRes.data;
+          setCenters(centerList);
+          if (state.centerId) setCenterId(state.centerId);
+
+          // Load subjects
+          if (state.centerId) {
+            const subRes = await projectService.listSubjects(state.projectId!);
+            const allSubs: SubjectOption[] = subRes.data.items ?? subRes.data;
+            const filtered = allSubs.filter((s: any) => s.center_id === state.centerId);
+            setSubjects(filtered.length > 0 ? filtered : allSubs);
+            if (state.subjectId) setSubjectId(state.subjectId);
+          }
+        } catch {
+          message.error('预加载数据失败');
+        }
+      };
+      init();
+    }
+  }, [location.state, preloaded, message]);
 
   // Load projects on first open
   const loadProjects = async () => {

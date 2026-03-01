@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Table, Button, Modal, Form, Input, App, Tag } from 'antd';
-import { PlusOutlined, EditOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, App, Tag, Space } from 'antd';
+import { PlusOutlined, EditOutlined, UploadOutlined, FileSearchOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import { projectService } from '../../services/projectService';
 
@@ -36,6 +37,7 @@ const statusMap: Record<string, { color: string; label: string }> = {
 
 export default function ProjectListPage() {
   const { message } = App.useApp();
+  const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -234,6 +236,30 @@ export default function ProjectListPage() {
       dataIndex: 'created_at',
       key: 'created_at',
       render: (val: string) => val ? new Date(val).toLocaleDateString('zh-CN') : '-',
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      render: (_: unknown, record: Subject) => (
+        <Space size="small">
+          <Button
+            type="link"
+            size="small"
+            icon={<UploadOutlined />}
+            onClick={() => navigate('/imaging/upload', { state: { projectId: record.project_id, centerId: record.center_id, subjectId: record.id } })}
+          >
+            上传影像
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            icon={<FileSearchOutlined />}
+            onClick={() => navigate(`/imaging?subject_id=${record.id}&project_id=${record.project_id}`)}
+          >
+            查看影像
+          </Button>
+        </Space>
+      ),
     },
   ];
 

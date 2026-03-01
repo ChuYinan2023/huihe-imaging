@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Table, Select, Space, Tag, Button, Drawer, Descriptions, App } from 'antd';
 import { EyeOutlined, SwapOutlined } from '@ant-design/icons';
+import { useSearchParams } from 'react-router-dom';
 import type { ColumnsType } from 'antd/es/table';
 import { imagingService } from '../../services/imagingService';
 import { projectService } from '../../services/projectService';
@@ -17,6 +18,7 @@ const statusMap: Record<string, { color: string; label: string }> = {
 
 export default function ImagingListPage() {
   const { message } = App.useApp();
+  const [searchParams] = useSearchParams();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
@@ -24,9 +26,16 @@ export default function ImagingListPage() {
   const [pageSize, setPageSize] = useState(20);
   const [subjectView, setSubjectView] = useState(false);
 
-  // Filters
-  const [projectId, setProjectId] = useState<number | undefined>();
+  // Filters — initialize from URL query params if present
+  const [projectId, setProjectId] = useState<number | undefined>(() => {
+    const v = searchParams.get('project_id');
+    return v ? Number(v) : undefined;
+  });
   const [centerId, setCenterId] = useState<number | undefined>();
+  const [subjectId] = useState<number | undefined>(() => {
+    const v = searchParams.get('subject_id');
+    return v ? Number(v) : undefined;
+  });
   const [status, setStatus] = useState<string | undefined>();
   const [visitPoint, setVisitPoint] = useState<string | undefined>();
 
@@ -61,6 +70,7 @@ export default function ImagingListPage() {
       const params: Record<string, any> = { page, page_size: pageSize };
       if (projectId) params.project_id = projectId;
       if (centerId) params.center_id = centerId;
+      if (subjectId) params.subject_id = subjectId;
       if (status) params.status = status;
       if (visitPoint) params.visit_point = visitPoint;
 
@@ -74,7 +84,7 @@ export default function ImagingListPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, projectId, centerId, status, visitPoint, subjectView, message]);
+  }, [page, pageSize, projectId, centerId, subjectId, status, visitPoint, subjectView, message]);
 
   useEffect(() => {
     fetchData();
