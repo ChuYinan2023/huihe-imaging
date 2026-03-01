@@ -3,6 +3,7 @@ import { Card, Col, Row, Statistic, Table, Alert, Typography } from 'antd';
 import { TeamOutlined, PictureOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useAuthStore } from '../../stores/auth';
 import api from '../../services/api';
+import { projectService } from '../../services/projectService';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
@@ -22,12 +23,23 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [imagingRes, issuesRes] = await Promise.all([
+        const [imagingRes, issuesRes, projRes] = await Promise.all([
           api.get('/imaging', { params: { page_size: 1 } }).catch(() => ({ data: { total: 0 } })),
           api.get('/issues', { params: { page_size: 1 } }).catch(() => ({ data: { total: 0 } })),
+          projectService.list(1, 100).catch(() => ({ data: { items: [] } })),
         ]);
+        // Count subjects across all projects
+        const projects = projRes.data?.items ?? projRes.data ?? [];
+        let subjectCount = 0;
+        for (const proj of projects) {
+          try {
+            const subRes = await projectService.listSubjects(proj.id);
+            const subs = subRes.data?.items ?? subRes.data ?? [];
+            subjectCount += Array.isArray(subs) ? subs.length : 0;
+          } catch { /* ignore */ }
+        }
         setStats({
-          subjects: 0,
+          subjects: subjectCount,
           imaging_sessions: imagingRes.data?.total || 0,
           issues: issuesRes.data?.total || 0,
         });

@@ -316,11 +316,16 @@ export default function ImagingUploadPage() {
               <Dragger
                 multiple
                 beforeUpload={(file) => {
+                  if (fileList.some(f => f.name === file.name && f.size === file.size)) {
+                    message.warning(`文件 "${file.name}" 已添加`);
+                    return Upload.LIST_IGNORE;
+                  }
                   setFileList(prev => [...prev, file]);
                   return false; // prevent auto upload
                 }}
                 onRemove={(file) => {
-                  setFileList(prev => prev.filter(f => f.name !== file.name));
+                  const idx = fileList.findIndex((_, i) => `file-${i}` === file.uid);
+                  if (idx >= 0) setFileList(prev => prev.filter((_, i) => i !== idx));
                 }}
                 fileList={fileList.map((f, i) => ({
                   uid: `file-${i}`,

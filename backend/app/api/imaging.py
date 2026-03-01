@@ -382,11 +382,22 @@ async def get_session(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
 
     result = await db.execute(
-        select(ImagingSession).where(ImagingSession.id == session_id)
+        select(
+            ImagingSession,
+            Subject.screening_number,
+            Project.name.label("project_name"),
+            Center.name.label("center_name"),
+        )
+        .join(Subject, ImagingSession.subject_id == Subject.id)
+        .join(Project, ImagingSession.project_id == Project.id)
+        .join(Center, ImagingSession.center_id == Center.id)
+        .where(ImagingSession.id == session_id)
     )
-    session = result.scalar_one_or_none()
-    if not session:
+    row = result.one_or_none()
+    if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    session, screening_number, project_name, center_name = row
 
     files_result = await db.execute(
         select(ImagingFile).where(ImagingFile.session_id == session_id).order_by(ImagingFile.id)
@@ -394,5 +405,8 @@ async def get_session(
     files = files_result.scalars().all()
 
     resp = _session_response(session)
+    resp["screening_number"] = screening_number
+    resp["project_name"] = project_name
+    resp["center_name"] = center_name
     resp["files"] = [_file_response(f) for f in files]
     return resp

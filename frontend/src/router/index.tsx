@@ -11,6 +11,7 @@ import ProjectListPage from '../pages/projects/ProjectListPage';
 import UserListPage from '../pages/users/UserListPage';
 import AuditLogPage from '../pages/audit/AuditLogPage';
 import SettingsPage from '../pages/settings/SettingsPage';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 const router = createBrowserRouter([
   {
@@ -29,8 +30,8 @@ const router = createBrowserRouter([
       { path: 'issues/:id', element: <IssueDetailPage /> },
       { path: 'reports', element: <ReportListPage /> },
       { path: 'projects', element: <ProjectListPage /> },
-      { path: 'users', element: <UserListPage /> },
-      { path: 'audit', element: <AuditLogPage /> },
+      { path: 'users', element: <ProtectedRoute roles={['admin']}><UserListPage /></ProtectedRoute> },
+      { path: 'audit', element: <ProtectedRoute roles={['admin']}><AuditLogPage /></ProtectedRoute> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },

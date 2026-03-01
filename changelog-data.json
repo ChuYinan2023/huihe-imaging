@@ -80,9 +80,17 @@
     "security_fixed": 5,
     "security_total": 5,
     "review_issues_total": 36,
-    "review_issues_tested": 18
+    "review_issues_tested": 18,
+    "frontend_review_fixed": 11,
+    "frontend_review_total": 18
   },
   "entries": [
+    {
+      "date": "2026-02-28 20:00 (PST)",
+      "tag": "fix",
+      "title": "修复前端交互 Review 11 项问题（F-01~F-12）",
+      "desc": "基于前端交互 Review 报告修复 11 项高/中优先级问题：\n\n必须修复（功能正确性）：\n• F-09：问题列表状态过滤参数 status → status_filter，过滤功能恢复\n• F-04：创建问题角色从仅 Expert 改为 admin/expert/pm/crc/cra，与后端权限矩阵一致\n• F-05：报告上传角色从仅 Expert 改为 canUpload(admin/expert/pm/cra) + canSign(admin/expert)\n• F-10：影像详情 API 增加 Subject/Project/Center JOIN，Drawer 显示项目名、中心名、受试者编号\n• F-11：报告列表 API 增加 Subject/Project/ImagingSession JOIN，返回 screening_number/project_name/visit_point/has_signature，移除内部路径暴露\n\n建议修复（用户体验）：\n• F-02：fetchMe 失败时调用 clearTokens() 清除过期 token\n• F-12：签名操作增加 Modal.confirm 确认对话框（电子签名不可逆）\n• F-06：报告上传 session_id 从 InputNumber 改为 Select 选择器，显示 #ID-受试者-访视点\n• F-07：仪表盘受试者统计从硬编码 0 改为实际查询所有项目受试者总数\n• F-08：影像上传文件去重检查（同名+同大小提示）+ onRemove 用 uid 匹配替代 name 匹配\n• F-03：/users 和 /audit 路由增加 ProtectedRoute roles={['admin']} 权限守卫\n\n跳过 F-01（CSRF 时序，影响极小）和 F-13~F-18（低优先级）。"
+    },
     {
       "date": "2026-02-28 19:15 (PST)",
       "tag": "docs",

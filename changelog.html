@@ -72,7 +72,7 @@
     <header>
         <div class="container">
             <h1>汇禾影像管理系统 (Huihe Imaging)</h1>
-            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 20:04</p>
+            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 20:18</p>
         </div>
     </header>
 
@@ -200,6 +200,16 @@
         <div class="progress-section changelog">
             <h2>更新日志</h2>
             <div class="timeline">
+
+                <div class="timeline-item">
+                    <div class="timeline-dot fix"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 20:00 (PST)</div>
+                        <div class="timeline-title"><span class="tag fix" style="color:#fff">fix</span>修复前端交互 Review 11 项问题（F-01~F-12）</div>
+                        <div class="timeline-desc">基于前端交互 Review 报告修复 11 项高/中优先级问题：<br><br>必须修复（功能正确性）：<br>• F-09：问题列表状态过滤参数 status → status_filter，过滤功能恢复<br>• F-04：创建问题角色从仅 Expert 改为 admin/expert/pm/crc/cra，与后端权限矩阵一致<br>• F-05：报告上传角色从仅 Expert 改为 canUpload(admin/expert/pm/cra) + canSign(admin/expert)<br>• F-10：影像详情 API 增加 Subject/Project/Center JOIN，Drawer 显示项目名、中心名、受试者编号<br>• F-11：报告列表 API 增加 Subject/Project/ImagingSession JOIN，返回 screening_number/project_name/visit_point/has_signature，移除内部路径暴露<br><br>建议修复（用户体验）：<br>• F-02：fetchMe 失败时调用 clearTokens() 清除过期 token<br>• F-12：签名操作增加 Modal.confirm 确认对话框（电子签名不可逆）<br>• F-06：报告上传 session_id 从 InputNumber 改为 Select 选择器，显示 #ID-受试者-访视点<br>• F-07：仪表盘受试者统计从硬编码 0 改为实际查询所有项目受试者总数<br>• F-08：影像上传文件去重检查（同名+同大小提示）+ onRemove 用 uid 匹配替代 name 匹配<br>• F-03：/users 和 /audit 路由增加 ProtectedRoute roles={[&#x27;admin&#x27;]} 权限守卫<br><br>跳过 F-01（CSRF 时序，影响极小）和 F-13~F-18（低优先级）。</div>
+                        <div class="timeline-hash"></div>
+                    </div>
+                </div>
 
                 <div class="timeline-item">
                     <div class="timeline-dot docs"></div>

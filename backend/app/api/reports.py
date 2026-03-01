@@ -11,6 +11,7 @@ from app.core.database import get_db
 from app.core.permissions import check_permission, Permission
 from app.models.user import User
 from app.models.imaging import ImagingSession
+from app.models.project import Project, Subject
 from app.models.report import Report
 from app.services.audit_service import AuditService
 from app.api.deps import get_current_user, get_client_ip, get_user_agent
@@ -26,20 +27,22 @@ def _safe_storage_path(rel_path: str) -> Path:
     return full
 
 
-def _report_response(report: Report) -> dict:
-    return {
+def _report_response(report: Report, extra: dict | None = None) -> dict:
+    resp = {
         "id": report.id,
         "session_id": report.session_id,
         "subject_id": report.subject_id,
         "project_id": report.project_id,
         "issue_id": report.issue_id,
-        "file_path": report.file_path,
-        "signed_file_path": report.signed_file_path,
+        "has_signature": bool(report.signed_file_path),
         "ai_summary": report.ai_summary,
         "uploaded_by": report.uploaded_by,
         "created_at": report.created_at.isoformat() if report.created_at else None,
         "updated_at": report.updated_at.isoformat() if report.updated_at else None,
     }
+    if extra:
+        resp.update(extra)
+    return resp
 
 
 @router.post("/upload", status_code=status.HTTP_201_CREATED)
@@ -120,8 +123,18 @@ async def list_reports(
     if not check_permission(current_user.role, Permission.VIEW_REPORTS):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
 
-    query = select(Report)
     count_query = select(func.count(Report.id))
+    query = (
+        select(
+            Report,
+            Subject.screening_number,
+            Project.name.label("project_name"),
+            ImagingSession.visit_point,
+        )
+        .outerjoin(Subject, Report.subject_id == Subject.id)
+        .outerjoin(Project, Report.project_id == Project.id)
+        .outerjoin(ImagingSession, Report.session_id == ImagingSession.id)
+    )
 
     if project_id is not None:
         query = query.where(Report.project_id == project_id)
@@ -137,13 +150,22 @@ async def list_reports(
     result = await db.execute(
         query.order_by(Report.id.desc()).offset(offset).limit(page_size)
     )
-    reports = result.scalars().all()
+    rows = result.all()
+
+    items = []
+    for row in rows:
+        report, screening_number, project_name, visit_point = row
+        items.append(_report_response(report, {
+            "screening_number": screening_number,
+            "project_name": project_name,
+            "visit_point": visit_point,
+        }))
 
     return {
         "total": total,
         "page": page,
         "page_size": page_size,
-        "items": [_report_response(r) for r in reports],
+        "items": items,
     }
 
 

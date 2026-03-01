@@ -1,17 +1,19 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Table, Select, Space, Button, Modal, Form, InputNumber, Upload, App, Tag } from 'antd';
+import { Table, Select, Space, Button, Modal, Form, Upload, App, Tag } from 'antd';
 import { PlusOutlined, UploadOutlined, DownloadOutlined, EditOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import type { ColumnsType } from 'antd/es/table';
 import type { UploadFile } from 'antd/es/upload';
 import { reportService } from '../../services/reportService';
 import { projectService } from '../../services/projectService';
+import { imagingService } from '../../services/imagingService';
 import { useAuthStore } from '../../stores/auth';
 import dayjs from 'dayjs';
 
 export default function ReportListPage() {
   const { message } = App.useApp();
   const user = useAuthStore((s) => s.user);
-  const isExpert = user?.role === 'expert';
+  const canUpload = ['admin', 'expert', 'pm', 'cra'].includes(user?.role ?? '');
+  const canSign = ['admin', 'expert'].includes(user?.role ?? '');
 
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -27,6 +29,7 @@ export default function ReportListPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [sessions, setSessions] = useState<any[]>([]);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -77,14 +80,22 @@ export default function ReportListPage() {
     }
   };
 
-  const handleSign = async (id: number) => {
-    try {
-      await reportService.sign(id);
-      message.success('签名成功');
-      fetchData();
-    } catch {
-      message.error('签名失败');
-    }
+  const handleSign = (id: number) => {
+    Modal.confirm({
+      title: '确认签名',
+      content: '电子签名后不可撤销，确认签名此报告？',
+      okText: '确认签名',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          await reportService.sign(id);
+          message.success('签名成功');
+          fetchData();
+        } catch {
+          message.error('签名失败');
+        }
+      },
+    });
   };
 
   const handleDownload = async (record: any) => {
@@ -129,7 +140,7 @@ export default function ReportListPage() {
           <Button type="link" icon={<DownloadOutlined />} onClick={() => handleDownload(record)}>
             下载
           </Button>
-          {isExpert && !record.has_signature && (
+          {canSign && !record.has_signature && (
             <Button type="link" icon={<EditOutlined />} onClick={() => handleSign(record.id)}>
               签名
             </Button>
@@ -143,8 +154,15 @@ export default function ReportListPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
         <h2 style={{ margin: 0 }}>报告管理</h2>
-        {isExpert && (
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => { form.resetFields(); setFileList([]); setUploadOpen(true); }}>
+        {canUpload && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={async () => {
+            form.resetFields(); setFileList([]);
+            try {
+              const res = await imagingService.list({ page: 1, page_size: 100 });
+              setSessions(res.data.items ?? res.data ?? []);
+            } catch { setSessions([]); }
+            setUploadOpen(true);
+          }}>
             上传报告
           </Button>
         )}
@@ -197,10 +215,18 @@ export default function ReportListPage() {
         <Form form={form} layout="vertical" preserve={false}>
           <Form.Item
             name="session_id"
-            label="关联影像会话 ID"
-            rules={[{ required: true, message: '请输入影像会话 ID' }]}
+            label="关联影像会话"
+            rules={[{ required: true, message: '请选择影像会话' }]}
           >
-            <InputNumber style={{ width: '100%' }} min={1} placeholder="影像会话 ID" />
+            <Select
+              placeholder="请选择影像会话"
+              showSearch
+              optionFilterProp="label"
+              options={sessions.map((s: any) => ({
+                label: `#${s.id} - ${s.screening_number ?? ''} - ${s.visit_point ?? ''}`,
+                value: s.id,
+              }))}
+            />
           </Form.Item>
           <Form.Item label="报告文件" required>
             <Upload

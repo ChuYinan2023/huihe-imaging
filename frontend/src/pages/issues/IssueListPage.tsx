@@ -20,7 +20,7 @@ export default function IssueListPage() {
   const { message } = App.useApp();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  const isExpert = user?.role === 'expert';
+  const canCreateIssue = ['admin', 'expert', 'pm', 'crc', 'cra'].includes(user?.role ?? '');
 
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -66,7 +66,7 @@ export default function IssueListPage() {
       const params: Record<string, any> = { page, page_size: pageSize };
       if (projectId) params.project_id = projectId;
       if (centerId) params.center_id = centerId;
-      if (statusFilter) params.status = statusFilter;
+      if (statusFilter) params.status_filter = statusFilter;
       const res = await issueService.list(params);
       setData(res.data.items ?? res.data ?? []);
       setTotal(res.data.total ?? 0);
@@ -152,7 +152,7 @@ export default function IssueListPage() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
         <h2 style={{ margin: 0 }}>问题管理</h2>
-        {isExpert && (
+        {canCreateIssue && (
           <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
             发起问题
           </Button>
