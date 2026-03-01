@@ -1,0 +1,197 @@
+{
+  "features": [
+    {"id": "F-01", "module": "认证", "name": "用户名密码登录", "status": "done"},
+    {"id": "F-02", "module": "认证", "name": "会话保持（双令牌）", "status": "done"},
+    {"id": "F-03", "module": "认证", "name": "退出登录", "status": "done"},
+    {"id": "F-04", "module": "用户管理", "name": "用户列表", "status": "done"},
+    {"id": "F-05", "module": "用户管理", "name": "新增用户", "status": "done"},
+    {"id": "F-06", "module": "用户管理", "name": "编辑用户", "status": "done"},
+    {"id": "F-07", "module": "用户管理", "name": "停用/启用用户", "status": "done"},
+    {"id": "F-08", "module": "用户管理", "name": "重置密码", "status": "done"},
+    {"id": "F-09", "module": "用户管理", "name": "强制下线", "status": "done"},
+    {"id": "F-10", "module": "项目管理", "name": "项目列表", "status": "done"},
+    {"id": "F-11", "module": "项目管理", "name": "新增项目", "status": "done"},
+    {"id": "F-12", "module": "项目管理", "name": "编辑项目", "status": "done"},
+    {"id": "F-13", "module": "项目管理", "name": "中心管理", "status": "done"},
+    {"id": "F-14", "module": "项目管理", "name": "受试者管理", "status": "done"},
+    {"id": "F-15", "module": "项目管理", "name": "项目成员", "status": "partial"},
+    {"id": "F-16", "module": "影像上传", "name": "创建影像会话", "status": "done"},
+    {"id": "F-17", "module": "影像上传", "name": "文件上传（DICOM/JPEG/PNG）", "status": "done"},
+    {"id": "F-18", "module": "影像上传", "name": "大文件分片断点续传", "status": "todo"},
+    {"id": "F-19", "module": "影像上传", "name": "上传进度展示", "status": "partial"},
+    {"id": "F-20", "module": "影像上传", "name": "SHA256 完整性校验", "status": "done"},
+    {"id": "F-21", "module": "自动脱敏", "name": "DICOM 自动脱敏", "status": "done"},
+    {"id": "F-22", "module": "自动脱敏", "name": "私有标签移除", "status": "done"},
+    {"id": "F-23", "module": "自动脱敏", "name": "UID 重写", "status": "done"},
+    {"id": "F-24", "module": "自动脱敏", "name": "脱敏日志", "status": "done"},
+    {"id": "F-25", "module": "自动脱敏", "name": "JPEG/PNG 直通", "status": "done"},
+    {"id": "F-26", "module": "影像中心", "name": "影像列表", "status": "done"},
+    {"id": "F-27", "module": "影像中心", "name": "多维筛选", "status": "done"},
+    {"id": "F-28", "module": "影像中心", "name": "受试者视图", "status": "done"},
+    {"id": "F-29", "module": "影像中心", "name": "影像详情", "status": "done"},
+    {"id": "F-30", "module": "影像中心", "name": "影像文件预览", "status": "todo"},
+    {"id": "F-31", "module": "影像质控", "name": "审阅影像", "status": "todo"},
+    {"id": "F-32", "module": "影像质控", "name": "标记状态", "status": "todo"},
+    {"id": "F-33", "module": "问题追踪", "name": "创建问题", "status": "done"},
+    {"id": "F-34", "module": "问题追踪", "name": "问题列表", "status": "done"},
+    {"id": "F-35", "module": "问题追踪", "name": "问题详情", "status": "done"},
+    {"id": "F-36", "module": "问题追踪", "name": "处理问题", "status": "done"},
+    {"id": "F-37", "module": "问题追踪", "name": "复核问题", "status": "done"},
+    {"id": "F-38", "module": "问题追踪", "name": "操作日志", "status": "done"},
+    {"id": "F-39", "module": "通知", "name": "问题创建通知", "status": "partial", "note": "桩（待对接 SMS）"},
+    {"id": "F-40", "module": "通知", "name": "问题打回通知", "status": "partial", "note": "桩（待对接 SMS）"},
+    {"id": "F-41", "module": "报告管理", "name": "上传报告", "status": "done"},
+    {"id": "F-42", "module": "报告管理", "name": "报告列表", "status": "done"},
+    {"id": "F-43", "module": "报告管理", "name": "报告详情", "status": "done"},
+    {"id": "F-44", "module": "报告管理", "name": "AI 辅助摘要", "status": "partial", "note": "桩（待对接 AI）"},
+    {"id": "F-45", "module": "报告管理", "name": "电子签名", "status": "done"},
+    {"id": "F-46", "module": "报告管理", "name": "报告下载", "status": "done"},
+    {"id": "F-47", "module": "工作台", "name": "统计概览", "status": "done"},
+    {"id": "F-48", "module": "工作台", "name": "待办事项", "status": "done"},
+    {"id": "F-49", "module": "工作台", "name": "事件提醒", "status": "done"},
+    {"id": "F-50", "module": "审计日志", "name": "日志列表", "status": "done"},
+    {"id": "F-51", "module": "审计日志", "name": "日志详情（脱敏展示）", "status": "done"},
+    {"id": "F-52", "module": "审计日志", "name": "不可篡改", "status": "done"},
+    {"id": "F-53", "module": "个人设置", "name": "修改密码", "status": "done"},
+    {"id": "F-54", "module": "个人设置", "name": "上传签名", "status": "partial", "note": "前端 UI 有，后端 API 待开发"},
+    {"id": "F-55", "module": "数据导出", "name": "影像数据导出", "status": "todo"},
+    {"id": "F-56", "module": "数据导出", "name": "问题数据导出", "status": "todo"},
+    {"id": "F-57", "module": "数据导出", "name": "报告数据导出", "status": "todo"}
+  ],
+  "pages": [
+    {"name": "登录页", "status": "done"},
+    {"name": "工作台 / 仪表盘", "status": "done"},
+    {"name": "影像列表", "status": "done"},
+    {"name": "影像详情", "status": "partial"},
+    {"name": "影像上传", "status": "done"},
+    {"name": "问题列表", "status": "done"},
+    {"name": "问题详情", "status": "done"},
+    {"name": "报告列表", "status": "done"},
+    {"name": "项目列表", "status": "done"},
+    {"name": "项目详情（中心/受试者）", "status": "done"},
+    {"name": "用户管理", "status": "done"},
+    {"name": "审计日志", "status": "done"},
+    {"name": "个人设置", "status": "done"},
+    {"name": "报告详情（预览/签名）", "status": "done"}
+  ],
+  "stats": {
+    "tests_passed": 80,
+    "tests_total": 80,
+    "security_fixed": 5,
+    "security_total": 5
+  },
+  "entries": [
+    {
+      "date": "2026-02-28 16:39 (PST)",
+      "tag": "fix",
+      "title": "修复角色权限与业务流程不匹配",
+      "desc": "Admin 升级为超级管理员（拥有全部权限）；PM 新增创建Issue、审核Issue、上传报告权限；CRC 新增创建Issue权限；CRA 新增创建Issue、上传报告权限。更新相关测试用例（DM 替代 CRC 做权限拒绝测试）。",
+      "commits": "429c7cf"
+    },
+    {
+      "date": "2026-02-28 16:26 (PST)",
+      "tag": "feat",
+      "title": "项目管理页面新增受试者管理（三层展开）",
+      "desc": "项目页面从两层（项目→中心）扩展为三层（项目→中心→受试者）。中心行可展开查看受试者列表，支持添加受试者弹窗（输入筛选号）。前端复用已有的 projectService.addSubject / listSubjects API。",
+      "commits": "3237206"
+    },
+    {
+      "date": "2026-02-28 16:22 (PST)",
+      "tag": "docs",
+      "title": "添加典型业务全流程文档",
+      "desc": "记录从项目搭建到审计日志的完整五阶段业务流程，包含每步的操作角色、前端路径、后端 API、Issue FSM 状态机流转图、角色权限矩阵和测试账号信息。",
+      "commits": "c1970aa"
+    },
+    {
+      "date": "2026-02-28 09:21 (PST)",
+      "tag": "feat",
+      "title": "自动化 changelog 脚本与 pre-commit hook",
+      "desc": "创建 scripts/update_changelog.py 自动从 git log 和项目状态生成 changelog.html。配置 .git/hooks/pre-commit 在每次 commit 前自动运行脚本并暂存更新后的 HTML 文件。",
+      "commits": "a9b40fc"
+    },
+    {
+      "date": "2026-02-28 09:19 (PST)",
+      "tag": "docs",
+      "title": "创建开发日志 HTML 页面",
+      "desc": "在项目根目录创建 changelog.html，包含功能清单进度（F-01~F-57）、页面清单、测试覆盖率、安全修复进度卡片，以及按时间倒序排列的更新时间线。设计为可独立发布的静态页面。",
+      "commits": "f186c77"
+    },
+    {
+      "date": "2026-02-28 09:16 (PST)",
+      "tag": "fix",
+      "title": "修复 5 个关键安全问题",
+      "desc": "1. CSRF 后端校验：双提交 Token 模式，header + cookie 匹配验证\n2. Cookie secure 标志：新增 COOKIE_SECURE 环境变量配置\n3. 文件上传流式处理：8KB chunk 流式写入，防止大文件 OOM\n4. 报告路径遍历防护：_safe_storage_path() 验证所有 DB 路径\n5. 审计日志接入：所有写操作端点接入 AuditService",
+      "commits": "6a0c700"
+    },
+    {
+      "date": "2026-02-28 08:34 (PST)",
+      "tag": "docs",
+      "title": "PMS 规格对比分析",
+      "desc": "将 PMS 项目规划书 + 技术方案与当前实现进行逐项对比，识别 5 个重要差距、7 个中等差距、7 个低优先级差距，整体匹配度约 80%。保存为 docs/plans/2026-02-28-pms-gap-analysis.md。",
+      "commits": "2a44445"
+    },
+    {
+      "date": "2026-02-28 07:53 (PST)",
+      "tag": "test",
+      "title": "E2E 端到端冒烟测试",
+      "desc": "覆盖完整业务流程：登录 → 影像会话创建 → 问题创建 → CRC 处理 → 专家复核 → 关闭 → 审计日志验证。79/79 测试全部通过。",
+      "commits": "66af49b"
+    },
+    {
+      "date": "2026-02-28 07:42 ~ 07:53 (PST)",
+      "tag": "feat",
+      "title": "Phase 7: 集成与种子数据",
+      "desc": "前后端 dev proxy 与启动脚本；种子数据（6 用户 × 1 项目 × 3 中心 × 9 受试者）。",
+      "commits": "705523a ~ 86b8b63"
+    },
+    {
+      "date": "2026-02-28 07:29 ~ 07:39 (PST)",
+      "tag": "feat",
+      "title": "Phase 6: 前端全部功能页面",
+      "desc": "登录页、仪表盘、用户管理（CRUD 弹窗）、项目管理（可展开中心列表）、影像上传（4 步向导）、影像列表（筛选+受试者视图）、问题列表+详情（时间线/处理/审核）、报告管理（上传/签章/AI 摘要）、审计日志、个人设置。",
+      "commits": "dd83188 ~ e487c93"
+    },
+    {
+      "date": "2026-02-28 06:34 ~ 07:23 (PST)",
+      "tag": "feat",
+      "title": "Phase 4: 全部后端 API 端点",
+      "desc": "用户 CRUD、项目/中心/受试者管理、影像上传（文件校验+哈希验证）、DICOM 脱敏 Celery 任务（幂等）、问题追踪（FSM 状态流转）、报告管理（PDF 签章）、审计日志查询、短信通知任务桩。",
+      "commits": "90f49e0 ~ a2765f6"
+    },
+    {
+      "date": "2026-02-28 06:02 ~ 06:04 (PST)",
+      "tag": "feat",
+      "title": "Phase 3: 核心服务层",
+      "desc": "StorageService 抽象（LocalStorage + 路径遍历防护）、FSM 状态机（影像+问题）、AuditService（手机/身份证脱敏）、DICOM 脱敏器（19 个 PHI 标签、私有标签移除、2.25.UID 重写）。",
+      "commits": "b661e9d ~ 5e0a496"
+    },
+    {
+      "date": "2026-02-28 05:47 ~ 05:58 (PST)",
+      "tag": "feat",
+      "title": "Phase 2: 认证与安全",
+      "desc": "密码哈希（bcrypt）、JWT 令牌创建/解码（完整 claims 校验）、登录/刷新/登出 API、Refresh Token 族链轮换与重放检测、RBAC 权限矩阵（6 角色 × 12 权限）。",
+      "commits": "37cb764 ~ c26901f"
+    },
+    {
+      "date": "2026-02-28 05:11 ~ 05:35 (PST)",
+      "tag": "feat",
+      "title": "Phase 1: 后端脚手架 + 数据库模型",
+      "desc": "FastAPI 项目结构、Pydantic 配置、异步 SQLAlchemy 数据库连接、12 张表数据模型（User/RefreshToken/Project/Center/Subject/ImagingSession/ImagingFile/AnonymizationLog/Issue/IssueLog/Report/AuditLog）、Alembic 初始迁移。",
+      "commits": "295c311 ~ 25457bd"
+    },
+    {
+      "date": "2026-02-27 21:17 ~ 21:22 (PST)",
+      "tag": "docs",
+      "title": "系统设计与实施计划",
+      "desc": "完成系统设计文档（3 轮安全加固审查、20 项改进），编写 34 个任务 × 7 阶段的 TDD 实施计划。",
+      "commits": "da17f7d ~ 77a7695"
+    },
+    {
+      "date": "2026-02-27 20:54 (PST)",
+      "tag": "docs",
+      "title": "项目初始化",
+      "desc": "从 Specify 模板创建项目仓库。",
+      "commits": "02a98c0"
+    }
+  ]
+}
