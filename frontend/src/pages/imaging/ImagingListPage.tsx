@@ -77,7 +77,8 @@ export default function ImagingListPage() {
       const res = subjectView
         ? await imagingService.listBySubject(params)
         : await imagingService.list(params);
-      setData(res.data.items ?? res.data ?? []);
+      const items = res.data.items ?? res.data;
+      setData(Array.isArray(items) ? items : []);
       setTotal(res.data.total ?? 0);
     } catch {
       message.error('获取影像列表失败');
