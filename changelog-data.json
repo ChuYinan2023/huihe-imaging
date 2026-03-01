@@ -84,6 +84,13 @@
   },
   "entries": [
     {
+      "date": "2026-02-28 18:08 (PST)",
+      "tag": "fix",
+      "title": "修复影像列表与受试者视图切换报错",
+      "desc": "影像中心页面切换「受试者视图」时前端报错，原因：\n1. 后端 /api/imaging/by-subject 返回 {subjects: {id: [sessions...]}} 原始分组字典，前端 Table 需要数组格式。重写为返回 {items: [...], total: N}，每项含 screening_number、project_name、center_name、session_count、latest_status\n2. 后端 /api/imaging 列表接口缺少关联字段（project_name、center_name、screening_number），通过 JOIN Subject/Project/Center 表一并返回\n3. 前端状态过滤参数名 status 与后端 status_filter 不匹配，修正为 status_filter\n\n全部 96 测试通过 + 11 xfail，零回归。",
+      "commits": "8dd2055"
+    },
+    {
       "date": "2026-02-28 17:45 (PST)",
       "tag": "feat",
       "title": "受试者行添加影像导航入口",

@@ -72,7 +72,7 @@
     <header>
         <div class="container">
             <h1>汇禾影像管理系统 (Huihe Imaging)</h1>
-            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 18:08</p>
+            <p>PMS 上市后监管平台 Phase 1 — 开发迭代记录 | 最后更新：2026-02-28 18:12</p>
         </div>
     </header>
 
@@ -200,6 +200,16 @@
         <div class="progress-section changelog">
             <h2>更新日志</h2>
             <div class="timeline">
+
+                <div class="timeline-item">
+                    <div class="timeline-dot fix"></div>
+                    <div class="timeline-content">
+                        <div class="timeline-time">2026-02-28 18:08 (PST)</div>
+                        <div class="timeline-title"><span class="tag fix" style="color:#fff">fix</span>修复影像列表与受试者视图切换报错</div>
+                        <div class="timeline-desc">影像中心页面切换「受试者视图」时前端报错，原因：<br>1. 后端 /api/imaging/by-subject 返回 {subjects: {id: [sessions...]}} 原始分组字典，前端 Table 需要数组格式。重写为返回 {items: [...], total: N}，每项含 screening_number、project_name、center_name、session_count、latest_status<br>2. 后端 /api/imaging 列表接口缺少关联字段（project_name、center_name、screening_number），通过 JOIN Subject/Project/Center 表一并返回<br>3. 前端状态过滤参数名 status 与后端 status_filter 不匹配，修正为 status_filter<br><br>全部 96 测试通过 + 11 xfail，零回归。</div>
+                        <div class="timeline-hash">8dd2055</div>
+                    </div>
+                </div>
 
                 <div class="timeline-item">
                     <div class="timeline-dot feat"></div>
