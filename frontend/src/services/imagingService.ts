@@ -14,6 +14,8 @@ export const imagingService = {
       },
     });
   },
+  completeSession: (sessionId: number) =>
+    api.post(`/imaging/sessions/${sessionId}/complete`),
   list: (params: Record<string, any>) =>
     api.get('/imaging', { params }),
   listBySubject: (params: Record<string, any>) =>

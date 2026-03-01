@@ -194,6 +194,8 @@ export default function ImagingUploadPage() {
       }
 
       if (completed === fileList.length) {
+        // Complete session — transition to anonymizing
+        await imagingService.completeSession(sessionId);
         message.success('所有文件上传成功');
         setCurrent(3);
       } else {

@@ -176,12 +176,8 @@ async def upload_file(
     )
     db.add(imaging_file)
 
-    # Update session hash
+    # Update session hash (latest file)
     session.file_hash = file_hash
-
-    # Transition status: UPLOADING -> ANONYMIZING
-    new_status = ImagingFSM.transition(session.status, ImagingStatus.ANONYMIZING)
-    session.status = new_status
 
     # Audit log
     audit = AuditService(db)
@@ -198,6 +194,51 @@ async def upload_file(
     await db.commit()
     await db.refresh(imaging_file)
     return _file_response(imaging_file)
+
+
+@router.post("/sessions/{session_id}/complete")
+async def complete_session(
+    session_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not check_permission(current_user.role, Permission.UPLOAD_IMAGING):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied")
+
+    result = await db.execute(
+        select(ImagingSession).where(ImagingSession.id == session_id)
+    )
+    session = result.scalar_one_or_none()
+    if not session:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+
+    if session.status != ImagingStatus.UPLOADING:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Session is not in uploading status")
+
+    # Verify at least one file was uploaded
+    file_count = await db.execute(
+        select(func.count(ImagingFile.id)).where(ImagingFile.session_id == session_id)
+    )
+    if (file_count.scalar() or 0) == 0:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No files uploaded")
+
+    # Transition: UPLOADING -> ANONYMIZING
+    new_status = ImagingFSM.transition(session.status, ImagingStatus.ANONYMIZING)
+    session.status = new_status
+
+    audit = AuditService(db)
+    await audit.log(
+        operator_id=current_user.id,
+        ip=get_client_ip(request),
+        user_agent=get_user_agent(request),
+        action="complete_upload",
+        resource_type="imaging_session",
+        resource_id=str(session_id),
+    )
+
+    await db.commit()
+    return _session_response(session)
 
 
 @router.get("")
